@@ -1,5 +1,7 @@
 import asyncio
 import sys
+
+import pytest
 from types import SimpleNamespace
 
 from crawl_experiment.core.errors import (
@@ -7,6 +9,7 @@ from crawl_experiment.core.errors import (
     ChallengeError,
     PaginationStalledError,
     ReviewParseError,
+    ReviewSurfaceError,
     SortError,
 )
 from crawl_experiment.core.models import CrawlResult, Review, Store
@@ -19,6 +22,7 @@ from crawl_experiment.sources.google_maps.health import (
     PageEvidence,
     classify_page,
 )
+from crawl_experiment.sources.google_maps.review_surface import ReviewSurfaceState
 from crawl_experiment.sources.google_maps.paginator import ReviewPaginator
 from crawl_experiment.storage.review_repository import ReviewRepository
 
@@ -218,11 +222,26 @@ def test_partial_timeout_preserves_extracted_review(monkeypatch):
         def warm_up(self): pass
         def open_store(self, store): return "resolved"
 
+    surface_calls = []
+
     class Surface:
-        def __init__(self, driver): pass
-        def open_reviews(self): return object()
-        def sort_newest(self): pass
-        def resolve_review_pane(self): return object()
+        def __init__(self, driver):
+            self.pane = object()
+
+        def prepare_and_classify(self):
+            surface_calls.append("prepare_and_classify")
+            self.before_access_classification()
+            return ReviewSurfaceState.FULL, self.pane, {
+                "pane": True, "cards": 1, "sort_control": True,
+            }
+
+        def sort_newest(self):
+            assert surface_calls == ["prepare_and_classify"]
+            surface_calls.append("sort_newest")
+
+        def resolve_review_pane(self):
+            assert surface_calls[-1] == "sort_newest"
+            return self.pane
 
     class Paginator:
         def __init__(self, *args, **kwargs):
@@ -245,6 +264,8 @@ def test_partial_timeout_preserves_extracted_review(monkeypatch):
     repo, checkpoints, metrics = ReviewRepository(":memory:"), Checkpoints(), Metrics()
     try:
         result = GoogleMapsCrawler(repo, checkpoints, metrics).crawl(Store("s", "Store", "Store"), object())
+        assert surface_calls == ["prepare_and_classify", "sort_newest"]
+        assert result.stop_reason == "timeout"
         assert result.status is CrawlStatus.PARTIAL_TIMEOUT
         assert result.reviews_written == 1 and repo.count() == 1
         assert checkpoints.saved[-1].status is CrawlStatus.PARTIAL_TIMEOUT
@@ -258,5 +279,38 @@ def test_partial_timeout_preserves_extracted_review(monkeypatch):
         ]
         assert all(event.status == "PROGRESS" for event in metrics.events[:-1])
         assert metrics.events[-1].status is CrawlStatus.PARTIAL_TIMEOUT
+    finally:
+        repo.close()
+
+
+def test_unknown_review_surface_stops_before_sort_or_collection(monkeypatch):
+    from crawl_experiment.sources.google_maps import crawler as module
+
+    class Navigator:
+        def __init__(self, driver): pass
+        def warm_up(self): pass
+        def open_store(self, store): return "resolved"
+
+    class Surface:
+        def __init__(self, driver): pass
+        def prepare_and_classify(self):
+            return ReviewSurfaceState.UNKNOWN, None, {"pane": False, "cards": 0}
+        def sort_newest(self):
+            pytest.fail("UNKNOWN access must not dispatch sort")
+
+    def paginator(*args, **kwargs):
+        pytest.fail("UNKNOWN access must not collect")
+
+    checkpoints = []
+    monkeypatch.setattr(module, "GoogleMapsNavigator", Navigator)
+    monkeypatch.setattr(module, "ReviewSurface", Surface)
+    monkeypatch.setattr(module, "ReviewPaginator", paginator)
+    repo = ReviewRepository(":memory:")
+    try:
+        crawler = GoogleMapsCrawler(repo, SimpleNamespace(save=checkpoints.append), timestamp_enrichment=False)
+        with pytest.raises(ReviewSurfaceError, match="UNKNOWN"):
+            crawler.crawl(Store("s", "Store", "Store"), object())
+        assert repo.count() == 0
+        assert checkpoints[-1].status is not CrawlStatus.COMPLETE
     finally:
         repo.close()

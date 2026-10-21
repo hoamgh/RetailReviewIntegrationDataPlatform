@@ -22,6 +22,8 @@ class PaginationState:
     non_scrollable: bool = False
     last_scroll_diagnostics: dict[str, object] = field(default_factory=dict)
     observation_started: bool = False
+    last_new_ids: set[str] = field(default_factory=set)
+    at_end: bool = False
 
 
 class ReviewPaginator:
@@ -61,7 +63,8 @@ class ReviewPaginator:
         ids = {c.get_attribute(selectors.REVIEW_ID_ATTRIBUTE) for c in cards}
         ids.discard(None)
         ids.discard("")
-        new_count = len(ids - self.state.seen_ids)
+        self.state.last_new_ids = ids - self.state.seen_ids
+        new_count = len(self.state.last_new_ids)
         self.state.seen_ids.update(ids)
         if new_count:
             self.state.idle_count = 0
@@ -80,24 +83,30 @@ class ReviewPaginator:
         if self.state.scroll_count >= self.max_scrolls:
             return "max_scrolls"
         if self.state.non_scrollable:
-            return "stalled"
+            return "natural_end" if self.state.at_end and self.state.seen_ids else "stalled"
         if self.state.idle_count >= self.idle_limit:
             return "stalled"
         return None
 
     def scroll(self) -> dict[str, object]:
+        scroll_started = self.clock()
+        locate_started = self.clock()
         before_cards = self.cards()
+        locate_cards_ms = (self.clock() - locate_started) * 1000
         before_ids = self._review_ids(before_cards)
         before_metrics = self._pane_metrics()
         result = self.driver.execute_script(selectors.SCROLL_TO_END_SCRIPT, self.pane)
         self.state.scroll_count += 1
         after_metrics = self._metrics_from_script_result(result) or self._pane_metrics()
+        wait_started = self.clock()
         after_cards = self._wait_for_dom_growth(before_ids)
+        wait_for_growth_ms = (self.clock() - wait_started) * 1000
         after_ids = self._review_ids(after_cards)
         new_ids = sorted(after_ids - self.state.seen_ids)
         moved = self._scroll_top_changed(before_metrics, after_metrics)
         if not moved and not new_ids:
             self.state.non_scrollable = True
+        self.state.at_end = self._is_at_end(after_metrics)
         diagnostics = {
             "scroll_count": self.state.scroll_count,
             "scroll_top_before": before_metrics.get("scrollTop"),
@@ -109,6 +118,12 @@ class ReviewPaginator:
             "unique_review_ids": len(after_ids),
             "new_review_ids": len(new_ids),
             "idle_count": self.state.idle_count,
+            "locate_cards_ms": round(locate_cards_ms, 3),
+            "wait_for_growth_ms": round(wait_for_growth_ms, 3),
+            "scroll_action_elapsed_ms": round(
+                (self.clock() - scroll_started) * 1000, 3
+            ),
+            "at_end": self.state.at_end,
         }
         self.state.last_scroll_diagnostics = diagnostics
         logger.info("pagination scroll: %s", json.dumps(diagnostics, sort_keys=True))
@@ -160,6 +175,18 @@ class ReviewPaginator:
             before.get("scrollTop") is not None
             and after.get("scrollTop") is not None
             and before.get("scrollTop") != after.get("scrollTop")
+        )
+
+    @staticmethod
+    def _is_at_end(metrics) -> bool:
+        top = metrics.get("scrollTop")
+        height = metrics.get("clientHeight")
+        total = metrics.get("scrollHeight")
+        return (
+            top is not None
+            and height is not None
+            and total is not None
+            and top + height >= total - 2
         )
 
     @staticmethod
