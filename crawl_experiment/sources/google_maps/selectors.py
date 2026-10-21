@@ -9,6 +9,18 @@ REVIEW_PANE_FALLBACKS = (
 REVIEW_PANE = ", ".join((REVIEW_PANE_PRIMARY, *REVIEW_PANE_FALLBACKS))
 PLACE_TABS = "[role='tab']"
 PLACE_SHELL = "h1.DUwDvf, [data-item-id='address'], button[jsaction*='pane.reviewChart']"
+PLACE_TITLE = "h1.DUwDvf"
+PLACE_ADDRESS = "[data-item-id='address']"
+PLACE_DETAIL_PANE = "div[role='main']"
+PLACE_ENTITY_MARKER = (
+    "[data-item-id='address'], "
+    "button[jsaction*='pane.reviewChart'], "
+    "button[data-item-id^='place-action']"
+)
+SEARCH_RESULT_CANDIDATES = (
+    "div[role='feed'] a[href*='/maps/place/'], "
+    "a.hfpxzc[href*='/maps/place/']"
+)
 SIGN_IN_PROMPT = "a[data-action='sign in'], a[href*='ServiceLogin']"
 REVIEWS_TAB_CSS = "button[role='tab'][aria-label*='Reviews'], button[jsaction*='pane.reviewChart']"
 REVIEWS_TAB_XPATH = "//button[contains(@aria-label,'Reviews') or .//*[contains(text(),'Reviews')]]"
@@ -37,10 +49,20 @@ NEWEST_LABELS = (
     "terbaru", "yakın zamanlı", "mới nhất", "नवीनतम",
 )
 AUTHOR = ".d4r55, [class*='author']"
+REVIEWER_PROFILE = "[data-href*='/maps/contrib/'], a[href*='/maps/contrib/']"
+REVIEWER_AVATAR = "button[data-href*='/maps/contrib/'] img"
+REVIEWER_METADATA = ".RfnDt"
 RATING = "span[role='img'][aria-label*='star']"
 TEXT = ".wiI7pd, .MyEned"
 DATE = ".rsqaWe"
 OWNER_RESPONSE = ".CDe7pd .wiI7pd, .owner-response"
+REVIEW_URL = "a[href*='/maps/reviews/'], a[href*='review_id='], a[href*='reviewId=']"
+REVIEW_MEDIA = (
+    "button[jsaction*='reviewPhoto'] img, "
+    "button[jsaction*='pane.reviewPhoto'] img, "
+    "button[data-photo-index] img, "
+    ".KtCyie img, .KtCyie .Tya61d, button.Tya61d"
+)
 SCROLL_TO_END_SCRIPT = """
     const pane = arguments[0];
     const before = {

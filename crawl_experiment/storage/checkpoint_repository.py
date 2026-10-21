@@ -17,6 +17,7 @@ class Checkpoint:
     failure_stage: str | None = None
     started_at: str | None = None
     finished_at: str | None = None
+    elapsed_seconds: float = 0.0
 
 
 class CheckpointRepository:

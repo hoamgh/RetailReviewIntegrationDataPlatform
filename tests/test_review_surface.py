@@ -9,28 +9,91 @@ from crawl_experiment.sources.google_maps.review_surface import ReviewSurface
 
 
 class Element:
-    def __init__(self, text="", **attributes):
+    def __init__(self, text="", *, owner=None, commit_selection=True, **attributes):
         self.text = text
         self.attributes = attributes
         self.click_count = 0
+        self.owner = owner
+        self.commit_selection = commit_selection
 
     def get_attribute(self, name):
         return self.attributes.get(name)
 
     def click(self):
         self.click_count += 1
+        if self.attributes.get("role") == "menuitemradio" and self.commit_selection:
+            self.attributes["aria-checked"] = "true"
+            if self.owner is not None:
+                for item in getattr(self.owner, "menu_items", []):
+                    if item is not self and item.attributes.get("role") == "menuitemradio":
+                        item.attributes["aria-checked"] = "false"
+                self.owner.menu_open = False
+                self.owner.selected = self
+
+
+class Clock:
+    def __init__(self):
+        self.now = 0.0
+        self.polls = 0
+
+    def __call__(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.polls += 1
+        assert self.polls <= 1000, "Sort fixture exceeded deterministic polling budget"
+        self.now += max(seconds, 0.001)
+
+
+def make_surface(driver, **kwargs):
+    clock = Clock()
+    kwargs.setdefault("clock", clock)
+    kwargs["sleeper"] = clock.sleep
+    return ReviewSurface(driver, **kwargs)
+
+
+class DatedCard(Element):
+    def find_elements(self, _, selector):
+        return [Element(self.text)] if selector == selectors.DATE else []
+
+
+class Pane(Element):
+    def __init__(self, owner):
+        super().__init__()
+        self.owner = owner
+
+    def find_elements(self, _, selector):
+        if selector == selectors.REVIEW_CARD:
+            return [DatedCard(date) for date in self.owner.dates]
+        return []
 
 
 class Driver:
-    def __init__(self, menu_items):
+    def __init__(self, menu_items, *, dates=("a day ago", "a week ago")):
         self.sort_button = Element()
+        self.sort_button.click = self.open_menu
         self.menu_items = menu_items
+        self.menu_open = False
+        self.selected = None
+        self.dates = dates
+        self.pane = Pane(self)
+        for item in menu_items:
+            item.owner = self
+
+    def open_menu(self):
+        self.menu_open = True
+
+    def execute_script(self, script, element):
+        if "scrollHeight" in script:
+            return {"scrollHeight": 1200, "clientHeight": 500, "scrollTop": 0}
 
     def find_elements(self, _, selector):
         if selector == selectors.SORT_BUTTON:
             return [self.sort_button]
         if selector == selectors.SORT_MENU_ITEMS:
-            return self.menu_items
+            return self.menu_items if self.menu_open else []
+        if selector in (selectors.REVIEW_PANE_PRIMARY, *selectors.REVIEW_PANE_FALLBACKS):
+            return [self.pane] if self.selected is not None else []
         return []
 
 
@@ -40,6 +103,8 @@ class OpeningDriver:
         self.normal = normal
         self.javascript = javascript
         self.actions = actions
+        self.selected = None
+        self.newest = Element("Newest", owner=self, role="menuitemradio")
         self.sort_button = Element(
             "",
             **{
@@ -67,7 +132,7 @@ class OpeningDriver:
         if selector == "[role='menu']":
             return [Element(role="menu")]
         if selector == selectors.SORT_MENU_ITEMS:
-            return [Element("Newest", role="menuitemradio")]
+            return [self.newest]
         return []
 
 
@@ -78,6 +143,8 @@ class LocalRetryDriver:
         self.lookups = 0
         self.menu_open = False
         self.review_pane = object()
+        self.selected = None
+        self.newest = Element("Newest", owner=self, role="menuitemradio")
 
     def execute_script(self, script, element):
         if "click" in script and element.attempt >= self.opens_on_attempt:
@@ -99,7 +166,7 @@ class LocalRetryDriver:
         if selector == "[role='menu']" and self.menu_open:
             return [Element(role="menu")]
         if selector == selectors.SORT_MENU_ITEMS and self.menu_open:
-            return [Element("Newest", role="menuitemradio")]
+            return [self.newest]
         return []
 
 
@@ -122,16 +189,18 @@ class LocalButton(Element):
 def test_sort_menu_opens_on_second_local_attempt():
     driver = LocalRetryDriver(opens_on_attempt=2)
 
-    ReviewSurface(driver, retry_delay=0, sleeper=lambda _: None).sort_newest()
+    make_surface(driver, retry_delay=0, sleeper=lambda _: None).sort_newest()
 
     assert driver.lookups >= 2
-    assert driver.menu_open is True
+    assert driver.menu_open is False
+    assert driver.selected is driver.newest
+    assert driver.newest.click_count == 1
 
 
 def test_sort_re_finds_button_after_stale_first_button():
     driver = LocalRetryDriver(opens_on_attempt=2, stale_first=True)
 
-    ReviewSurface(driver, retry_delay=0, sleeper=lambda _: None).sort_newest()
+    make_surface(driver, retry_delay=0, sleeper=lambda _: None).sort_newest()
 
     assert driver.lookups >= 2
 
@@ -139,7 +208,7 @@ def test_sort_re_finds_button_after_stale_first_button():
 def test_sort_reenters_reviews_after_local_attempts_fail():
     driver = LocalRetryDriver(opens_on_attempt=4)
 
-    reopened_pane = ReviewSurface(
+    reopened_pane = make_surface(
         driver,
         retry_delay=0,
         sleeper=lambda _: None,
@@ -147,23 +216,29 @@ def test_sort_reenters_reviews_after_local_attempts_fail():
 
     assert reopened_pane is not None
     assert driver.lookups >= 4
-    assert driver.menu_open is True
+    assert driver.menu_open is False
+    assert driver.selected is driver.newest
+    assert driver.newest.click_count == 1
 
 
 def test_sort_menu_opens_after_normal_click():
     driver = OpeningDriver()
 
-    ReviewSurface(driver).sort_newest()
+    make_surface(driver).sort_newest()
 
-    assert driver.menu_open is True
+    assert driver.menu_open is False
+    assert driver.selected is driver.newest
+    assert driver.newest.click_count == 1
 
 
 def test_sort_menu_uses_javascript_click_fallback():
     driver = OpeningDriver(normal=False, javascript=True)
 
-    ReviewSurface(driver).sort_newest()
+    make_surface(driver).sort_newest()
 
-    assert driver.menu_open is True
+    assert driver.menu_open is False
+    assert driver.selected is driver.newest
+    assert driver.newest.click_count == 1
 
 
 def test_sort_menu_uses_action_chains_fallback(monkeypatch):
@@ -184,16 +259,18 @@ def test_sort_menu_uses_action_chains_fallback(monkeypatch):
 
     monkeypatch.setattr(review_surface_module, "ActionChains", FakeActionChains)
 
-    ReviewSurface(driver).sort_newest()
+    make_surface(driver).sort_newest()
 
-    assert driver.menu_open is True
+    assert driver.menu_open is False
+    assert driver.selected is driver.newest
+    assert driver.newest.click_count == 1
 
 
 def test_sort_menu_never_opens_reports_explicit_diagnostics():
     driver = OpeningDriver(normal=False, javascript=False)
 
     with pytest.raises(SortError) as captured:
-        ReviewSurface(driver).sort_newest()
+        make_surface(driver).sort_newest()
 
     message = str(captured.value)
     assert "sort menu failed to open" in message
@@ -205,7 +282,7 @@ def test_sort_menu_never_opens_reports_explicit_diagnostics():
 @pytest.mark.parametrize("label", ["Newest", "Mới nhất"])
 def test_sort_newest_matches_localized_text(label):
     newest = Element(label, role="menuitemradio")
-    surface = ReviewSurface(Driver([newest]))
+    surface = make_surface(Driver([newest]))
 
     surface.sort_newest()
 
@@ -215,7 +292,7 @@ def test_sort_newest_matches_localized_text(label):
 def test_sort_newest_matches_aria_label_and_deduplicates_entries():
     first = Element(role="menuitemradio", **{"aria-label": "Newest"})
     duplicate = Element(role="menuitemradio", **{"aria-label": "Newest"})
-    surface = ReviewSurface(Driver([first, duplicate]))
+    surface = make_surface(Driver([first, duplicate]))
 
     surface.sort_newest()
 
@@ -229,8 +306,8 @@ def test_sort_newest_uses_second_radio_item_for_identified_standard_menu():
         role="menuitemradio",
         **{"aria-checked": "true"},
     )
-    newest = Element("Les plus récents", role="menuitemradio")
-    surface = ReviewSurface(Driver([relevant, newest]))
+    newest = Element("Unrecognized second option", role="menuitemradio")
+    surface = make_surface(Driver([relevant, newest]))
 
     surface.sort_newest()
 
@@ -240,7 +317,7 @@ def test_sort_newest_uses_second_radio_item_for_identified_standard_menu():
 
 def test_sort_newest_failure_has_discovered_item_diagnostics():
     item = Element("Most relevant", role="menuitem", **{"aria-label": "Relevant"})
-    surface = ReviewSurface(Driver([item]))
+    surface = make_surface(Driver([item]))
 
     with pytest.raises(SortError) as captured:
         surface.sort_newest()
@@ -256,18 +333,23 @@ def test_sort_newest_failure_has_discovered_item_diagnostics():
 
 
 def test_sort_button_uses_container_fallback_and_rejects_negative_button():
+    negative = Element("Overview", **{"aria-label": "Overview", "role": "button"})
+
     class ContainerDriver(OpeningDriver):
         def find_elements(self, method, selector):
             if selector == selectors.SORT_BUTTON:
                 return []
             if selector == "div[role='main'] button[aria-haspopup='true']":
-                return [self.sort_button]
+                return [negative, self.sort_button]
             return super().find_elements(method, selector)
 
     driver = ContainerDriver()
-    ReviewSurface(driver).sort_newest()
+    make_surface(driver).sort_newest()
 
-    assert driver.menu_open is True
+    assert negative.click_count == 0
+    assert driver.menu_open is False
+    assert driver.selected is driver.newest
+    assert driver.newest.click_count == 1
 
 
 def test_sort_button_uses_localized_xpath_fallback():
@@ -278,13 +360,15 @@ def test_sort_button_uses_localized_xpath_fallback():
             if self.menu_open and selector == "[role='menu']":
                 return [Element(role="menu")]
             if self.menu_open and selector == selectors.SORT_MENU_ITEMS:
-                return [Element("Newest", role="menuitemradio")]
+                return [self.newest]
             return []
 
     driver = XPathDriver()
-    ReviewSurface(driver).sort_newest()
+    make_surface(driver).sort_newest()
 
-    assert driver.menu_open is True
+    assert driver.menu_open is False
+    assert driver.selected is driver.newest
+    assert driver.newest.click_count == 1
 
 
 def test_m_lu_xec_text_container_resolves_parent_radio():
@@ -297,9 +381,11 @@ def test_m_lu_xec_text_container_resolves_parent_radio():
     class InnerTextDriver(Driver):
         def execute_script(self, script, element):
             if "closest" in script:
+                parent.owner = self
                 return parent
+            return super().execute_script(script, element)
 
-    surface = ReviewSurface(InnerTextDriver([text_container]))
+    surface = make_surface(InnerTextDriver([text_container]))
 
     surface.sort_newest()
 
@@ -311,9 +397,31 @@ def test_selenium_element_id_deduplicates_menu_entries():
     first = Element("Newest", role="menuitemradio")
     duplicate = Element("Newest", role="menuitemradio")
     first.id = duplicate.id = "same-remote-element"
-    surface = ReviewSurface(Driver([first, duplicate]))
+    surface = make_surface(Driver([first, duplicate]))
 
     surface.sort_newest()
 
     assert first.click_count == 1
     assert duplicate.click_count == 0
+
+
+def test_successful_click_without_selection_evidence_is_rejected():
+    newest = Element("Newest", role="menuitemradio", commit_selection=False)
+    driver = Driver([newest])
+    with pytest.raises(SortError, match="click was not confirmed"):
+        make_surface(driver).sort_newest()
+    assert newest.click_count > 0
+    assert newest.get_attribute("aria-checked") is None
+    assert driver.selected is None
+
+
+@pytest.mark.parametrize("dates", [(), ("a week ago", "a day ago")])
+def test_unknown_label_menu_close_requires_consistent_review_dates(dates):
+    relevant = Element("Pertinence", role="menuitemradio", **{"aria-checked": "true"})
+    newest = Element("Unrecognized second option", role="menuitemradio")
+    driver = Driver([relevant, newest], dates=dates)
+    # Isolate the first attempt: subsequent retries see the changed radio state.
+    with pytest.raises(SortError, match="fallback option click was not confirmed"):
+        make_surface(driver)._sort_newest_once()
+    assert newest.click_count > 0
+    assert relevant.click_count == 0

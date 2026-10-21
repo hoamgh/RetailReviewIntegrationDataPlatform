@@ -30,6 +30,14 @@ class ReviewSurfaceError(CrawlError):
     pass
 
 
+class LimitedReviewViewError(ReviewSurfaceError):
+    pass
+
+
+class AuthRequiredError(ReviewSurfaceError):
+    pass
+
+
 class SortError(ReviewSurfaceError):
     pass
 

@@ -1,6 +1,6 @@
 import pytest
 
-from crawl_experiment.core.errors import LimitedViewError
+from crawl_experiment.core.errors import PlaceResolutionError
 from crawl_experiment.core.models import Store
 from crawl_experiment.sources.google_maps import selectors
 from crawl_experiment.sources.google_maps.health import (
@@ -9,6 +9,7 @@ from crawl_experiment.sources.google_maps.health import (
     classify_page,
 )
 from crawl_experiment.sources.google_maps.navigator import GoogleMapsNavigator
+from crawl_experiment.sources.google_maps.review_surface import ReviewSurface, ReviewSurfaceState
 
 
 def test_true_limited_page_requires_strong_evidence():
@@ -61,18 +62,27 @@ class ResolvingDriver:
         return Element("Sign in to see more")
 
     def find_elements(self, _, selector):
-        if self.resolved and selector == selectors.PLACE_TABS:
-            return [Element("Reviews")]
+        if self.resolved:
+            if selector == selectors.PLACE_TITLE:
+                return [Element("Coles World Square")]
+            if selector in (selectors.PLACE_TABS, selectors.PLACE_SHELL,
+                            selectors.PLACE_DETAIL_PANE, selectors.PLACE_ENTITY_MARKER,
+                            selectors.REVIEWS_TAB_CSS):
+                return [Element("Reviews")]
         return []
 
 
 def test_navigator_waits_for_resolving_page_instead_of_marking_limited():
     driver = ResolvingDriver()
+    clock = AdvancingClock()
+
+    def resolve_after_poll(seconds):
+        clock.sleep(seconds)
+        driver.resolved = True
+
     navigator = GoogleMapsNavigator(
-        driver,
-        resolve_timeout_seconds=1,
-        clock=lambda: 0,
-        sleeper=lambda _: setattr(driver, "resolved", True),
+        driver, resolve_timeout_seconds=1,
+        clock=clock, sleeper=resolve_after_poll,
     )
 
     resolved_url = navigator.open_store(
@@ -80,6 +90,9 @@ def test_navigator_waits_for_resolving_page_instead_of_marking_limited():
     )
 
     assert "/maps/place/" in resolved_url
+    assert clock.now == 0.25
+    assert navigator.last_resolution_diagnostics["place_entity_confirmed"] is True
+    assert navigator.last_resolution_diagnostics["resolved_place_title"] == "Coles World Square"
 
 
 class Element:
@@ -103,17 +116,69 @@ class LimitedDriver:
         return []
 
 
-def test_navigator_limited_error_contains_url_and_trigger_signals():
-    navigator = GoogleMapsNavigator(
-        LimitedDriver(),
-        resolve_timeout_seconds=0,
-        sleeper=lambda _: None,
-    )
+class AdvancingClock:
+    def __init__(self):
+        self.now = 0.0
+        self.polls = 0
 
-    with pytest.raises(LimitedViewError) as captured:
+    def __call__(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.polls += 1
+        assert self.polls <= 10, "Resolver exceeded deterministic polling budget"
+        self.now += max(seconds, 0.001)
+
+
+@pytest.mark.parametrize("missing", ["title", "shell", "detail", "marker", "matching_title"])
+def test_place_url_and_tabs_do_not_replace_entity_evidence(missing):
+    class IncompleteDriver(ResolvingDriver):
+        def find_elements(self, method, selector):
+            absent = {"title": selectors.PLACE_TITLE, "shell": selectors.PLACE_SHELL,
+                      "detail": selectors.PLACE_DETAIL_PANE, "marker": selectors.PLACE_ENTITY_MARKER}
+            if selector == absent.get(missing):
+                return []
+            if missing == "matching_title" and selector == selectors.PLACE_TITLE:
+                return [Element("Different business")]
+            return super().find_elements(method, selector)
+
+    driver = IncompleteDriver()
+    driver.resolved = True
+    clock = AdvancingClock()
+    navigator = GoogleMapsNavigator(driver, resolve_timeout_seconds=0.5, clock=clock, sleeper=clock.sleep)
+    with pytest.raises(PlaceResolutionError, match="exact place entity did not resolve"):
+        navigator.open_store(Store("s", "Coles World Square", "Coles World Square"))
+    assert clock.now == 0.5
+    assert clock.polls == 2
+    assert navigator.last_resolution_diagnostics["place_entity_confirmed"] is False
+
+
+def test_unresolved_limited_search_is_place_resolution_failure():
+    navigator = GoogleMapsNavigator(LimitedDriver(), resolve_timeout_seconds=0)
+    with pytest.raises(PlaceResolutionError) as captured:
         navigator.open_store(Store("s", "Store", "Store"))
+    assert "maps/search/Store" in str(captured.value)
+    assert navigator.last_resolution_diagnostics["place_entity_confirmed"] is False
 
-    message = str(captured.value)
-    assert "maps/search/Store" in message
-    assert "text:limited view" in message
-    assert "ui:sign_in_prompt" in message
+
+def test_resolved_place_with_limited_reviews_is_not_full_access():
+    class LimitedPlaceDriver(ResolvingDriver):
+        def find_elements(self, method, selector):
+            if selector in (selectors.PLACE_DETAIL_PANE, "[role='main']"):
+                return [Element("Sign in to see all reviews. Limited review view.")]
+            if selector == selectors.SIGN_IN_PROMPT:
+                return [Element("Sign in")]
+            return super().find_elements(method, selector)
+
+    driver = LimitedPlaceDriver()
+    driver.resolved = True
+    navigator = GoogleMapsNavigator(driver, resolve_timeout_seconds=0)
+    url = navigator.open_store(Store("s", "Coles World Square", "Coles World Square"))
+    assert "/maps/place/" in url
+    assert navigator.last_resolution_diagnostics["place_entity_confirmed"] is True
+    state, pane, evidence = ReviewSurface(driver).prepare_and_classify()
+    assert state is ReviewSurfaceState.LIMITED
+    assert pane is None
+    assert evidence["review_tabs"] == 1
+    assert "limited review view" in evidence["limited_evidence"]
+    assert evidence["sort_control"] is False
