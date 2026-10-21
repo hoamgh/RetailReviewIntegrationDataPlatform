@@ -1,0 +1,17 @@
+{
+  "provenance": "Synthetic offline UI projection; no live author or comment content",
+  "video_id": "123",
+  "url": "https://www.tiktok.com/@fixture/video/123",
+  "cards": [
+    {"text": "Synthetic parent A", "item_attributes": {"data-comment-id": "parent-a"}, "reply_count_raw": "View 3 replies"},
+    {"text": "Synthetic parent B", "reply_count_raw": "View 1 reply"},
+    {"text": "Synthetic no-reply parent", "reply_count_raw": "0"}
+  ],
+  "replies": [
+    {"text": "Synthetic reply one", "item_attributes": {"data-comment-id": "reply-a"}, "parent_card": {"text": "Synthetic parent A", "item_attributes": {"data-comment-id": "parent-a"}}},
+    {"text": "Synthetic reply two", "item_attributes": {"data-comment-id": "reply-b"}, "parent_card": {"text": "Synthetic parent A", "item_attributes": {"data-comment-id": "parent-a"}}},
+    {"text": "Synthetic reply without source IDs", "parent_card": {"text": "Synthetic parent B"}},
+    {"text": "Synthetic orphan reply"}
+  ],
+  "reply_controls_observed": 1
+}

@@ -1,0 +1,88 @@
+{
+  "videos": [
+    {
+      "video_id": "1000000000000000001",
+      "video_url": "https://www.tiktok.com/@fixture/video/1000000000000000001"
+    },
+    {
+      "video_id": "1000000000000000002",
+      "video_url": "https://www.tiktok.com/@fixture/video/1000000000000000002"
+    }
+  ],
+  "snapshots_by_video": {
+    "1000000000000000001": [
+      {
+        "observed_at": "2026-01-01T00:00:00Z",
+        "snapshot": {
+          "url": "https://www.tiktok.com/@fixture/video/1000000000000000001",
+          "cards": [
+            {
+              "author_attributes": {},
+              "author_display_name": "Fixture author 1",
+              "author_href_raw": "/@fixture_author_1",
+              "created_at_raw": "2026-01-01",
+              "date_attributes": {},
+              "item_attributes": {},
+              "like_aria_label": "Like video\n1 likes",
+              "like_count_raw": "1",
+              "reply_count_raw": "View 1 reply",
+              "root_attributes": {},
+              "text": "Synthetic offline comment 1",
+              "unsupported_card_shape": false
+            },
+            {
+              "author_attributes": {},
+              "author_display_name": "Fixture author 2",
+              "author_href_raw": "/@fixture_author_2",
+              "created_at_raw": "2026-01-01",
+              "date_attributes": {},
+              "item_attributes": {},
+              "like_aria_label": "Like video\n1 likes",
+              "like_count_raw": "1",
+              "reply_count_raw": "View 1 reply",
+              "root_attributes": {},
+              "text": "Synthetic offline comment 2",
+              "unsupported_card_shape": false
+            }
+          ],
+          "comment_panel_present": true,
+          "comment_heading": "4 comments",
+          "scroll_container": null
+        }
+      }
+    ],
+    "1000000000000000002": [
+      {
+        "observed_at": "2026-01-01T00:00:00Z",
+        "snapshot": {
+          "url": "https://www.tiktok.com/@fixture/video/1000000000000000002",
+          "comment_panel_present": true,
+          "cards": [
+            {
+              "text": "Synthetic offline comment 1",
+              "created_at_raw": "2026-01-01"
+            },
+            {
+              "text": "Synthetic offline comment 2",
+              "created_at_raw": "2026-01-01"
+            },
+            {
+              "text": "Synthetic offline comment 3",
+              "created_at_raw": "2026-01-01"
+            },
+            {
+              "text": "Synthetic offline comment 4",
+              "created_at_raw": "2026-01-01"
+            },
+            {
+              "text": "Synthetic offline comment 5",
+              "created_at_raw": "2026-01-01"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "validation_browser": "offline artifact replay; no browser launched",
+  "provenance": "SYNTHETIC_PUBLICATION_FIXTURE: invented IDs, authors, text and timestamps; no live crawl evidence."
+}

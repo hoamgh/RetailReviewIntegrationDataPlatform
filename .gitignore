@@ -39,3 +39,21 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# Publication safety: local guidance and runtime/private artifacts
+AGENTS.md
+.env.*
+/output/
+/docs/agent_state/
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.parquet
+**/profiles/
+**/browser_profiles/
+**/cookies*.json
