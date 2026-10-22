@@ -62,8 +62,20 @@ def windows_mutex(name):
         if status not in (0,0x80):  # WAIT_OBJECT_0 or WAIT_ABANDONED
             raise OSError(ctypes.get_last_error(),'Publisher mutex wait failed')
         acquired = True
-        yield
+        owner_pid,owner_thread=os.getpid(),threading.get_ident()
+        active=[True]
+        def validate_ownership():
+            if not active[0] or os.getpid()!=owner_pid or threading.get_ident()!=owner_thread:
+                raise PublisherBusy('Mutex ownership capability inactive/wrong controller thread')
+            # Native recursive acquisition proves this thread still owns it;
+            # immediately balance the recursion without releasing the original.
+            if kernel.WaitForSingleObject(handle,0)!=0:
+                raise PublisherBusy('Native mutex ownership not verified')
+            if not kernel.ReleaseMutex(handle):
+                raise PublisherBusy('Native mutex ownership check failed')
+        yield validate_ownership
     finally:
+        if 'active' in locals():active[0]=False
         if handle:
             if acquired:kernel.ReleaseMutex(handle)
             kernel.CloseHandle(handle)
@@ -80,8 +92,9 @@ def publisher_ownership(database, lake):
     identities = (resource_id(database,'database'),resource_id(lake,'lake'))
     names = sorted('Global\\IntegrationRecommendationPublisherV1_'+i for i in identities)
     with ExitStack() as stack:
-        for name in names:stack.enter_context(windows_mutex(name))
+        guards=[stack.enter_context(windows_mutex(name)) for name in names]
         def unchanged():
+            for guard in guards:guard()
             if identities != (resource_id(database,'database'),resource_id(lake,'lake')):
                 raise IntegrityError('PUBLISHER_RESOURCE_CHANGED')
         unchanged()

@@ -125,10 +125,19 @@ def guarded_python(code):
 
 
 def test_required_suites_include_google_without_replacing_original_suites():
-    assert len(gate.SUITES) == len(set(gate.SUITES)) == 25
+    assert len(gate.SUITES) == len(set(gate.SUITES)) == 29
     assert {"tests/test_architecture.py", "tests/test_navigation_health.py",
             "tests/test_review_surface.py"}.issubset(gate.SUITES)
-    assert len(gate.MODULES) == 25
+    assert len(gate.MODULES) == 29
+
+
+def test_c2da_gate_selects_offline_tests_not_manual_browser_entrypoints():
+    assert {'tests/test_harness_local_browser.py','tests/test_harness_local_faults.py',
+            'tests/test_harness_worker_resolution.py','tests/test_harness_local_resolution.py'}.issubset(gate.SUITES)
+    assert all(path.startswith(('tests/','experiments/')) and path.endswith('.py') for path in gate.SUITES)
+    workflow=(ROOT/'.github/workflows/harness-windows.yml').read_text()
+    for manual in ('crawler_harness.local_smoke','crawler_harness.local_resolution_validation','--local-uc'):
+        assert manual not in workflow
 
 
 def test_guard_allows_repeated_real_asyncio_self_pipes_and_cleans_registration():
