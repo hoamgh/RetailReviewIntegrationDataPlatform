@@ -191,11 +191,12 @@ class ManagedWorker:
         self.worker_identity=None;self.controller_identity=None
         self._lock=None;self._entered=False;self._intent=False;self._finished=False
         self._created=False;self._children={};self._proof=None
+        self._source_guard=None;self._creation_binding=None
 
     def __enter__(self):
         if self._entered or self._finished:raise ContainmentError('Owner context cannot be reused')
         self._lock=windows_mutex('Global\\IntegrationRecommendationWorkerV1_'+self.database_id+'_tiktok')
-        self._lock.__enter__()
+        self._source_guard=self._lock.__enter__()
         try:
             with self.store._transaction(self.token):
                 job=self.store._owned(self.token)
@@ -267,6 +268,7 @@ class ManagedWorker:
                 self.api.noninherited(self.process);self.api.noninherited(self.thread)
                 self.api.member(self.process,self.job)
                 self.worker_identity=self.api.identity(self.process)
+                self._creation_binding=(self.job,self.process,self.worker_identity,self.controller_identity)
                 if self.fault:self.fault('created_suspended',self)
                 if self.store._owned(self.token)['state']!='RUNNING':
                     raise OwnershipError('Source already sealed; worker resume refused')
@@ -345,7 +347,13 @@ class ManagedWorker:
                 except OwnershipError:
                     # Cleanup of retained owned handles is safe without a live
                     # lease. Stale authority may NOT clear durable launch intent.
-                    proof['durable_resolution']=False
+                    # An explicit reviewed cleanup operation may already have
+                    # resolved this exact historical intent without a Claim.
+                    resolved=self.store.db.execute("""SELECT 1 FROM harness_events
+                        WHERE job_id=? AND attempt_id=? AND generation=?
+                        AND event_type='worker.quiescent' AND code=?""",
+                        (self.token.job_id,self.token.attempt_id,self.token.generation,self.session_id)).fetchone()
+                    proof['durable_resolution']=resolved is not None
             self._proof=proof
             return dict(proof)
         finally:self._dispose()
@@ -360,6 +368,7 @@ class ManagedWorker:
             if h:self.api.k.CloseHandle(h);setattr(self,name,None)
         if self._lock:
             self._lock.__exit__(None,None,None);self._lock=None
+        self._source_guard=None
         self._finished=True
 
     def __exit__(self,*_):

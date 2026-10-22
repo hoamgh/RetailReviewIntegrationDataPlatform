@@ -1,7 +1,7 @@
-"""C2b offline managed command boundary. Actual driver objects stay in C2a child.
+"""Managed command boundary. Actual driver objects stay in C2a child.
 
 Cooperative Python API, not a security sandbox against reflective/local attackers.
-No live provider, session adoption, automatic action replay or restriction release.
+Real provider is local-only; no source access, adoption, replay or release.
 """
 from dataclasses import asdict
 import json
@@ -32,7 +32,7 @@ class DriverFacade:
     def __setattr__(self,name,value):return object.__getattribute__(self,'_boundary').deny()
     def __getattribute__(self,name):
         boundary=object.__getattribute__(self,'_boundary')
-        if name=='_tiktok_browser_backend':return 'managed-offline-fixture'
+        if name=='_tiktok_browser_backend':return 'managed-local-uc' if boundary.local_config else 'managed-offline-fixture'
         if name in DRIVER_READ:return boundary.command(name,[])
         if name in DRIVER_CALL:return lambda *args:boundary.command(name,list(args))
         return boundary.deny()
@@ -52,12 +52,26 @@ class ElementFacade:
 
 class ManagedBrowserSession:
     def __init__(self,store,token,*,profile,evidence,fixture_config=None,
-                 heartbeat_interval=.5,lease_seconds=30,command_timeout=8):
+                 heartbeat_interval=.5,lease_seconds=30,command_timeout=8,
+                 local_page=None, startup_timeout=60):
         if type(command_timeout) not in (int,float) or not 0<command_timeout<=30:
             raise StateError('Bounded command timeout required')
         self.store,self.token=store,token
         self.profile_path=Path(profile).resolve();self.evidence=Path(evidence).resolve()
         self.fixture_config=fixture_config or {};self.command_timeout=command_timeout
+        self.local_config=None
+        self._local_processes=[]
+        self._local_descendants_quiescent=None
+        if local_page is not None:
+            import hashlib
+            from .local_browser import validate_config
+            page=Path(local_page).resolve(strict=True)
+            self.local_config={'page':str(page),'sha256':hashlib.sha256(page.read_bytes()).hexdigest()}
+            validate_config(self.local_config)
+            if fixture_config is not None:raise StateError('Local browser cannot use fixture configuration')
+        if type(startup_timeout) not in (int,float) or not 0<startup_timeout<=120:
+            raise StateError('Bounded startup timeout required')
+        self.startup_timeout=startup_timeout
         self.heartbeat=LeaseHeartbeat(store,token,interval=heartbeat_interval,lease_seconds=lease_seconds)
         self.owner=ManagedWorker(store,token,fault=self._bootstrap)
         self.profile=None;self.conn=None;self.driver=None;self.state='NEW'
@@ -67,6 +81,8 @@ class ManagedBrowserSession:
         self._created_evidence=False
         from .restrictions import installed, Restrictions
         self.restrictions=Restrictions(store) if installed(store) else None
+        if self.local_config is not None and self.restrictions is not None:
+            raise StateError('OFFLINE_FIXTURE registry cannot authorize a real browser')
         self._restriction_registered=False;self._restriction_failed=False
         self._access_observation={}
         self._access_observed_monotonic=0
@@ -78,10 +94,18 @@ class ManagedBrowserSession:
                 'profile_id':self.profile.manifest['profile_id'],'profile_path':str(self.profile_path),
                 'restriction_database':str(self.store.path) if self.restrictions else None,
                 'claim_owner':self.token.owner,
+                'local_config':self.local_config,
+                'authority_database':str(self.store.path),
                 'fixture_config':self.fixture_config})
 
     def __enter__(self):
         try:
+            if self.local_config is not None:
+                with self.store._transaction(self.token):
+                    row=self.store._owned(self.token)
+                    if (json.loads(row['definition_json'])['workflow']!='harness-local-smoke-v1' or
+                            row['input_digest']!=self.local_config['sha256']):
+                        raise CommandFault('Dedicated synthetic workflow/input required')
             self.owner.__enter__();self._entered_owner=True
             if self.restrictions:
                 self.restrictions.register(self.token,self.owner.session_id)
@@ -96,11 +120,13 @@ class ManagedBrowserSession:
             (self.evidence/'commands').mkdir()
             self.profile=DedicatedProfile(self.profile_path,self.owner)
             self.profile.__enter__();self._entered_profile=True
+            if self.local_config is not None:self.heartbeat.start()
             self.owner.start([sys.executable,'-B','-m','crawler_harness.browser_worker',
-                '--offline-fixture',self._address,str(self.evidence/'bootstrap.json')])
-            deadline=time.monotonic()+self.command_timeout
+                '--local-uc' if self.local_config is not None else '--offline-fixture',
+                self._address,str(self.evidence/'bootstrap.json')])
+            deadline=time.monotonic()+(self.startup_timeout if self.local_config is not None else self.command_timeout)
             while not (self.evidence/'bootstrap.ready').exists():
-                if self.owner.api.wait(self.owner.process) or time.monotonic()>deadline:
+                if self.heartbeat.lost.is_set() or self.owner.api.wait(self.owner.process) or time.monotonic()>deadline:
                     raise CommandFault('Worker initialization unavailable')
                 time.sleep(.01)
             self.conn=Client(self._address,family='AF_PIPE',authkey=None)
@@ -110,10 +136,27 @@ class ManagedBrowserSession:
             if not self.conn.poll(self.command_timeout):raise CommandFault('Worker handshake timeout')
             hello=receive(self.conn)
             if hello['session_id']!=self.owner.session_id:raise CommandFault('Worker session mismatch')
+            if self.local_config is not None:
+                from .local_browser import MODE,retain_owned_processes
+                if hello.get('provider')!=MODE:raise CommandFault('Wrong real provider')
+                identities=self.owner.inventory()
+                atomic_json(self.evidence/'real-handshake.json',{'owned_processes':hello.get('owned_processes'),
+                    'inventory':identities})
+                retain_owned_processes(self.owner,hello.get('owned_processes',[]))
+                self._local_processes=hello['owned_processes']
+                atomic_json(self.evidence/'real-startup.json',{'provider':MODE,
+                    'owned_processes':hello['owned_processes'],'inventory':identities,
+                    'service_lifecycle':hello['service_lifecycle'],
+                    'job_id':self.token.job_id,'attempt_id':self.token.attempt_id,
+                    'session_id':self.owner.session_id,'profile_id':self.profile.manifest['profile_id']})
             self.browser_session=hello['browser_session']
-            self.heartbeat.start();self.state='READY';self.driver=DriverFacade(self)
+            if self.local_config is None:self.heartbeat.start()
+            self.state='READY';self.driver=DriverFacade(self)
             return self
-        except BaseException:
+        except BaseException as exc:
+            if self.local_config is not None and self._created_evidence:
+                atomic_json(self.evidence/'startup-failure.json',{'error_class':type(exc).__name__,
+                    'reason':str(exc) if isinstance(exc,(CommandFault,ContainmentError)) else 'STARTUP_FAILED'})
             self.close()
             raise
 
@@ -121,6 +164,12 @@ class ManagedBrowserSession:
         if self.state!='READY' or self.heartbeat.lost.is_set():raise CommandFault('Browser dispatch stopped')
         self.owner._owner(self.owner.session_id,self.token.attempt_id)
         self.owner.api.member(self.owner.process,self.owner.job)
+        if self.local_config is not None:
+            for expected in self._local_processes:
+                handle,identity=self.owner._children[expected['pid']]
+                if asdict(self.owner.api.identity(handle))!=expected or self.owner.api.wait(handle):
+                    raise CommandFault('Pinned browser/service stopped or changed')
+                self.owner.api.member(handle,self.owner.job)
         if self.owner.api.wait(self.owner.process):raise CommandFault('Worker stopped')
         self.profile.validate(self.profile.manifest['profile_id'],self.owner.session_id)
         row=self.store._owned(self.token)
@@ -141,6 +190,7 @@ class ManagedBrowserSession:
             with ledger._transaction(self.token):check()
 
     def source_gate(self,bound=None):
+        if self.local_config is not None:raise CommandFault('Local smoke cannot write source data')
         # Called inside existing M3-B source transaction; no RPC/browser/SQL wait.
         if self.state!='READY' or self.heartbeat.lost.is_set():raise CommandFault('Source commit after unknown browser action refused')
         if self.restrictions:self._restriction_check(bound)
@@ -220,6 +270,11 @@ class ManagedBrowserSession:
         try:
             if self._entered_owner and self.owner._created:
                 self.owner.shutdown(session_id=self.owner.session_id,attempt_id=self.token.attempt_id)
+                if self.local_config is not None:
+                    stopped=all(self.owner.api.wait(handle,1000) for handle,_ in self.owner._children.values())
+                    self.owner._proof['retained_descendants_signaled']=stopped
+                    self._local_descendants_quiescent=stopped
+                    if not stopped:raise ContainmentError('Owned browser/service handles not quiescent')
         finally:
             self._evidence(cid,name,outcome,start)
         try:self._event('browser.command_unknown' if outcome=='UNKNOWN' else 'browser.command_refused',cid)
@@ -240,6 +295,9 @@ class ManagedBrowserSession:
         cid=uuid.uuid4().hex;start=time.monotonic();dispatched=False
         try:
             self._validate(name)
+            if self.local_config is not None:
+                from .local_browser import permit
+                permit(self.local_config,name,args,element)
             allowed=(ELEMENT_READ|ELEMENT_CALL) if element else (DRIVER_READ|DRIVER_CALL)
             if name not in allowed or self.commands>=1000:raise CommandFault('Command not permitted')
             if name=='execute_cdp_cmd' and args[0] not in CDP:raise CommandFault('CDP command refused')
@@ -263,6 +321,8 @@ class ManagedBrowserSession:
                     response.get('session_id')!=self.owner.session_id or
                     response.get('browser_session')!=self.browser_session):
                 raise CommandFault('Command response/context unknown')
+            if self.local_config is not None and response.get('owned_processes')!=self._local_processes:
+                raise CommandFault('Command service ownership proof changed')
             self._validate(name)
             result=self._decode(response['result'])
             self._event('browser.command_succeeded',cid,name)
@@ -284,6 +344,7 @@ class ManagedBrowserSession:
         raise CommandFault('Unapproved result type')
 
     def run_collection(self,adapter,match_data,**options):
+        if self.local_config is not None:raise CommandFault('Real collection disabled pending runtime restrictions review')
         if adapter.store is not self.store or adapter.lake is None:raise CommandFault('Adapter scope mismatch')
         if self.store.get(self.token.job_id)['state']=='PERSISTING':
             raise CommandFault('Sealed source receipt: close session and use storage-only recovery')
@@ -326,6 +387,11 @@ class ManagedBrowserSession:
             self.heartbeat.close()
             if self._entered_owner:
                 self.owner.shutdown(session_id=self.owner.session_id,attempt_id=self.token.attempt_id)
+                if self.local_config is not None:
+                    stopped=all(self.owner.api.wait(handle,1000) for handle,_ in self.owner._children.values())
+                    self.owner._proof['retained_descendants_signaled']=stopped
+                    self._local_descendants_quiescent=stopped
+                    if not stopped:raise ContainmentError('Owned browser/service handles not quiescent')
                 if self._restriction_registered and not self._restriction_failed and self.owner._created:
                     self.restrictions.close_verified(self.token,self.owner.session_id,self.owner)
                     self._restriction_registered=False
@@ -343,6 +409,7 @@ class ManagedBrowserSession:
                         'job_id':self.token.job_id,'attempt_id':self.token.attempt_id,
                         'worker_proof':self.owner._proof,'command_count':self.commands,
                         'unresolved_command_id':self.inflight,
+                        'local_retained_descendants_signaled':self._local_descendants_quiescent,
                         'heartbeat':{'renewals':self.heartbeat.renewals,'authority_lost':self.heartbeat.lost.is_set(),
                             'separate_thread_connection':self.heartbeat.connection_thread is not None and
                                 self.heartbeat.connection_thread!=threading.get_ident()},
