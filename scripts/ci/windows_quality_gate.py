@@ -35,10 +35,12 @@ SUITES = (
     'tests/test_browser_session.py', 'tests/test_extractor.py',
     'tests/test_paginator.py', 'tests/test_review_pane_handoff.py',
     'tests/test_smoke_test_runner.py',
+    'tests/test_harness_local_browser.py', 'tests/test_harness_local_faults.py',
+    'tests/test_harness_worker_resolution.py', 'tests/test_harness_local_resolution.py',
 )
 MODULES = {p[:-3].replace('/', '.') for p in SUITES}
-# Verified with guarded pytest --collect-only: 25 suites, 528 cases.
-MINIMUM_CASES = 528
+# Verified with guarded pytest --collect-only: 29 suites, 619 cases.
+MINIMUM_CASES = 619
 
 
 def project_report(raw, exit_code, elapsed):
