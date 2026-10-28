@@ -16,6 +16,9 @@ test = ["pytest==9.1.1"]
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+fnb_platform = ["osm_fnb_mapping.v1.json"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
-testpaths = ["tests/test_catalog.py", "tests/test_categories.py", "tests/test_prepare_catalog.py"]
+testpaths = ["tests/test_catalog.py", "tests/test_categories.py", "tests/test_prepare_catalog.py", "tests/test_osm.py"]

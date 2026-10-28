@@ -1,21 +1,26 @@
-# Current task — M0.6A F&B Offline CI
+# Current task — M1.1 Offline OSM Source Adapter
 
-State: IMPLEMENTED_AND_LOCALLY_VERIFIED; local CI/checkpoint commit approved.
+State: IMPLEMENTED_AND_LOCALLY_VERIFIED; local seven-file commit approved.
+Prerequisite: user confirms hosted CI green on d7277343 (31 tests, fresh Python 3.11 install).
 
-## VERIFIED
-- Workflow: .github/workflows/fnb-offline-tests.yml; push, pull_request, manual.
-- Windows latest, Python 3.11, contents: read, 15-minute timeout, no services.
-- Installs package + declared test extra via python -m pip install ".[test]".
-- Runs scripts/run_offline_tests.py; no download extra or external data required.
-- YAML parsed with PyYAML; workflow settings/test extra checked against TOML.
-- Local existing CPython 3.12.7 environment: 31 passed, 2 warnings, 0.82s.
-- All 10 modified and 6 untracked crawler/script files retain their byte hashes.
+## VERIFIED scope
+- src/fnb_platform/osm.py and osm_fnb_mapping.v1.json: in-memory normalization,
+  source-specific identities, raw observation/tag/provenance retention, F&B mapping.
+- Node lat/lon; way/relation GeoJSON Point/Polygon/MultiPolygon or supplied center.
+  Valid polygons use representative_point; derived/source centers flagged approximate.
+- Missing/invalid geometry rejected with diagnostics; no invalid-geometry fallback.
+- Highest source version then canonical JSON dedup; distinct source identities kept.
+- Existing ward validation/covers and catalog dataclasses reused, schema unchanged.
+- tests/test_osm.py: 44 synthetic cases; 75 total tests passed, 2 existing warnings,
+  0.88s on local Python 3.12.7. Exact command in STATUS.md.
+- pyproject.toml packages mapping JSON and includes OSM tests; offline runner includes them.
+- All 16 protected crawler/script files retain their pre-task SHA-256 digest; excluded from this commit.
 
-## UNVERIFIED
-Fresh Python 3.11 install and GitHub-hosted workflow execution; no packages installed.
-Ignored production datasets untouched; tests create isolated ignored fixture evidence.
+## Limits
+No live data, input geometry assembly, publication or completeness claims.
+M1.1 hosted execution/fresh package build remain unverified.
 
 ## Next action
-Resume M0.6 legacy retirement gates in a separate task. Hosted execution still
-needs verification. This commit covers only CI and the two canonical checkpoints;
-no legacy deletions, crawler changes, push or M1 work are authorized here.
+Review M1.1 and approve M1.2 bounded real OSM acquisition/conversion with versioned
+manifest, provenance/rights, geometry assembly, input checksum and profiling.
+Do not begin M1.2–M1.4 or push. Only the seven M1.1 paths are approved for this local commit.

@@ -27,6 +27,7 @@ def main():
     evidence = tempfile.mkdtemp(prefix="baseline-tests-", dir=root / "output")
     return pytest.main([
         "tests/test_catalog.py", "tests/test_categories.py", "tests/test_prepare_catalog.py",
+        "tests/test_osm.py",
         "-q", "-p", "no:cacheprovider", "--basetemp", evidence,
     ])
 
