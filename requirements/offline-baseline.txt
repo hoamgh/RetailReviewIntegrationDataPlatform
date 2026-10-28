@@ -1,0 +1,12 @@
+# Core/test dependency closure observed with CPython 3.12.7 on Windows.
+# No download extra; no artifact hashes or clean-environment install verified.
+numpy==1.26.4
+pyarrow==23.0.1
+shapely==2.1.2
+pytest==9.1.1
+iniconfig==2.3.0
+packaging==26.3
+pluggy==1.6.0
+pygments==2.21.0
+colorama==0.4.6; sys_platform == "win32"
+setuptools==84.2.1

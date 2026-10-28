@@ -1,0 +1,34 @@
+{
+  "archive_commit": "2f0f8ecc2ff5d427d7d7efaa7be46a848d2d16c5",
+  "verification": "Archive paths and SHA-256 verified locally; adaptation correctness covered only by focused tests.",
+  "files": [
+    {
+      "path": "src/fnb_platform/categories.py",
+      "archive_path": "crawl_experiment/core/place_categories.py",
+      "archive_sha256": "4f64dd125adb22b4a86b8122e803889f1ba110805877c4a0f467f31c6b3e8bba",
+      "current_sha256": "4f64dd125adb22b4a86b8122e803889f1ba110805877c4a0f467f31c6b3e8bba",
+      "byte_identical": true
+    },
+    {
+      "path": "src/fnb_platform/models.py",
+      "archive_path": "crawl_experiment/core/place_catalog.py",
+      "archive_sha256": "06f8d3f42d44f9253ad118ee26b6cb8eea1886d73a95416b308713f1be25a903",
+      "current_sha256": "06f8d3f42d44f9253ad118ee26b6cb8eea1886d73a95416b308713f1be25a903",
+      "byte_identical": true
+    },
+    {
+      "path": "src/fnb_platform/catalog.py",
+      "archive_path": "crawl_experiment/storage/place_catalog.py",
+      "archive_sha256": "c784bdab32885f3293ac45e25401177fece10ce6deb5fd9c01231f172bdb2f62",
+      "current_sha256": "98ad3a7f95149e50d926bbcd2ae3495fc3165af172c498b42b59f14960f6e107",
+      "byte_identical": false
+    }
+  ],
+  "unverified_origins": [
+    "src/fnb_platform/prepare_catalog.py",
+    "tests/test_catalog.py",
+    "tests/test_categories.py",
+    "tests/test_prepare_catalog.py"
+  ],
+  "note": "Entrypoint and test origins not independently established; no crawler code changed by M0.2B."
+}
