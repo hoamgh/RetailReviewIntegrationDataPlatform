@@ -1,0 +1,20 @@
+{
+  "version": "osm-fnb-v1",
+  "include": {
+    "amenity": {
+      "restaurant": "restaurant",
+      "cafe": "cafe_coffee",
+      "fast_food": "fast_food",
+      "food_court": "other_food",
+      "ice_cream": "bakery_dessert"
+    },
+    "shop": {
+      "bakery": "bakery_dessert",
+      "pastry": "bakery_dessert"
+    }
+  },
+  "review": {
+    "amenity": ["bar", "pub", "nightclub"],
+    "shop": ["supermarket", "convenience", "caterer", "coffee", "tea"]
+  }
+}
