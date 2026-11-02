@@ -1,59 +1,45 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.egg-info/
-*.egg
-dist/
-build/
-
-# Virtual environments
+AGENTS.md
+/data/
+/output/
+/logs/
+/docs/agent_state/
+.env
+.env.*
+.auth/
+.playwright-mcp/
 .venv/
 venv/
-
-# Testing
+__pycache__/
+*.py[cod]
 .pytest_cache/
-.test-tmp/
+*.egg-info/
+dist/
+build/
+*.sqlite*
+*.parquet
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Environment / secrets
-.env
-
-# Data artifacts (large crawl outputs, browser state)
-data/
-
-# Browser profiles, sessions, screenshots
-downloaded_files/
-archived_logs/
-latest_logs/
-*.lock
-
-# Node (upstream experiment dependencies)
-node_modules/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Publication safety: local guidance and runtime/private artifacts
-AGENTS.md
-.env.*
-/output/
-/docs/agent_state/
-*.sqlite
-*.sqlite3
+# Legacy runtime and private browser assets; retain publication protections.
+*.db
 *.db-wal
 *.db-shm
 *.sqlite-wal
 *.sqlite-shm
 *.sqlite3-wal
 *.sqlite3-shm
-*.parquet
+*.lock
 **/profiles/
 **/browser_profiles/
+**/google-crawler-login*/
 **/cookies*.json
+**/Cookies
+**/Login Data*
+**/Local State
+/downloaded_files/
+/archived_logs/
+/latest_logs/
+/.test-tmp/
+node_modules/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
