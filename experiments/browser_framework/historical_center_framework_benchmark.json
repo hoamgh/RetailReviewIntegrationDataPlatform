@@ -1,0 +1,166 @@
+{
+  "anchor": {
+    "name": "center",
+    "lat": 10.776223449846349,
+    "lng": 106.69714944271055
+  },
+  "fixture_id": "historical_center_framework_benchmark",
+  "benchmark_scope": "browser_framework",
+  "polygon_filter": false,
+  "historical_results_are_ground_truth": false,
+  "anchor_resolution": "CONFIRMED",
+  "anchor_decision": "Owner approved exact historical center for framework comparison, not Khanh Hoi coverage. No polygon filtering.",
+  "anchor_evidence": {
+    "path": "D:\\Projects\\integration-recomentdation\\experiments\\google_maps_discovery\\google_maps_discovery_benchmark\\output\\anchor_live_summary.json",
+    "sha256": "3b99f6c21282470c4d62f904ed323db1cf8e58bc7e3eed049331e092a6d89246"
+  },
+  "boundary_evidence": {
+    "path": "config/admin_areas/phuong_khanh_hoi.geojson",
+    "sha256": "29a17ec4fd1f3fc578fa7decee15c9b5f12591e2cc678d5f97d34f1092d9ca55",
+    "bounds": [
+      106.6969214,
+      10.7524189,
+      106.7111531,
+      10.7653499
+    ],
+    "covers_anchor": false
+  },
+  "concurrency": 1,
+  "repeats": 3,
+  "cases": [
+    {
+      "id": "D01",
+      "kind": "discovery",
+      "query": "quán ăn",
+      "zoom": 15,
+      "max_places": 40,
+      "anchor": {
+        "name": "center",
+        "lat": 10.776223449846349,
+        "lng": 106.69714944271055
+      },
+      "url": "https://www.google.com/maps/search/qu%C3%A1n%20%C4%83n/@10.776223449846349,106.69714944271055,15z?hl=en"
+    },
+    {
+      "id": "D02",
+      "kind": "discovery",
+      "query": "nhà hàng",
+      "zoom": 15,
+      "max_places": 40,
+      "anchor": {
+        "name": "center",
+        "lat": 10.776223449846349,
+        "lng": 106.69714944271055
+      },
+      "url": "https://www.google.com/maps/search/nh%C3%A0%20h%C3%A0ng/@10.776223449846349,106.69714944271055,15z?hl=en"
+    },
+    {
+      "id": "D03",
+      "kind": "discovery",
+      "query": "restaurant",
+      "zoom": 15,
+      "max_places": 40,
+      "anchor": {
+        "name": "center",
+        "lat": 10.776223449846349,
+        "lng": 106.69714944271055
+      },
+      "url": "https://www.google.com/maps/search/restaurant/@10.776223449846349,106.69714944271055,15z?hl=en"
+    },
+    {
+      "id": "D04",
+      "kind": "discovery",
+      "query": "cafe",
+      "zoom": 15,
+      "max_places": 40,
+      "anchor": {
+        "name": "center",
+        "lat": 10.776223449846349,
+        "lng": 106.69714944271055
+      },
+      "url": "https://www.google.com/maps/search/cafe/@10.776223449846349,106.69714944271055,15z?hl=en"
+    },
+    {
+      "id": "D05",
+      "kind": "discovery",
+      "query": "quán cơm",
+      "zoom": 15,
+      "max_places": 40,
+      "anchor": {
+        "name": "center",
+        "lat": 10.776223449846349,
+        "lng": 106.69714944271055
+      },
+      "url": "https://www.google.com/maps/search/qu%C3%A1n%20c%C6%A1m/@10.776223449846349,106.69714944271055,15z?hl=en"
+    },
+    {
+      "id": "R01",
+      "kind": "reviews",
+      "name": "Trà Sữa Leetea",
+      "overture_id": "59be7510-fc32-43ed-bfa2-4fcb8578b2c0",
+      "url": "https://www.google.com/maps/place/Tr%C3%A0+S%E1%BB%AFa+Leetea/@10.7580289,106.7066726,17z/data=!3m1!4b1!4m6!3m5!1s0x31752f6e6fa35ed1:0xb49c8856b0f005df!8m2!3d10.7580289!4d106.7066726!16s%2Fg%2F11j1hyzvx0?entry=ttu&g_ep=EgoyMDI2MDkyOC4wIKXMDSoASAFQAw%3D%3D",
+      "google_place_id": "0x31752f6e6fa35ed1:0xb49c8856b0f005df",
+      "max_reviews": 20,
+      "historical_extracted_count": 22,
+      "historical_status": "COMPLETE",
+      "historical_date": "2026-10-01",
+      "historical_count_source": "owner supplied; not current total",
+      "current_displayed_review_count": null,
+      "current_count_status": "UNKNOWN",
+      "reference_hashes": {},
+      "identity_evidence": {
+        "path": "D:\\Projects\\integration-recomentdation\\output\\crawler_benchmark\\runs\\20261001T075700.323641Z-4f458d89\\events.jsonl",
+        "line": 32,
+        "sha256": "df80219fd9fdf6ff4552d334a0e1c0e96f1dc1bbc99463ba08d1d5d9069ecd80",
+        "event_status": "RESOLVED",
+        "coordinate_distance_m": 6.869607998717867
+      }
+    },
+    {
+      "id": "R02",
+      "kind": "reviews",
+      "name": "Quán Ốc Sóc",
+      "overture_id": "fcbc7db8-b1ec-44f7-8800-5e758f90b788",
+      "url": "https://www.google.com/maps/place/Qu%C3%A1n+%E1%BB%90c+S%C3%B3c/@10.7623329,106.7030355,17z/data=!3m1!4b1!4m6!3m5!1s0x31752f6b824e2ef3:0xfa9a938cd038522f!8m2!3d10.7623329!4d106.7030355!16s%2Fg%2F11c1tkqnj2?entry=ttu&g_ep=EgoyMDI2MDkyOC4wIKXMDSoASAFQAw%3D%3D",
+      "google_place_id": "0x31752f6b824e2ef3:0xfa9a938cd038522f",
+      "max_reviews": 20,
+      "historical_extracted_count": 60,
+      "historical_status": "PARTIAL_LIMIT",
+      "historical_date": "2026-10-01",
+      "historical_count_source": "owner supplied; not current total",
+      "current_displayed_review_count": null,
+      "current_count_status": "UNKNOWN",
+      "reference_hashes": {},
+      "identity_evidence": {
+        "path": "D:\\Projects\\integration-recomentdation\\output\\crawler_benchmark\\runs\\20261001T075700.323641Z-4f458d89\\events.jsonl",
+        "line": 6,
+        "sha256": "df80219fd9fdf6ff4552d334a0e1c0e96f1dc1bbc99463ba08d1d5d9069ecd80",
+        "event_status": "RESOLVED",
+        "coordinate_distance_m": 2.8987664485967315
+      }
+    },
+    {
+      "id": "R03",
+      "kind": "reviews",
+      "name": "Sugar Town Bakery - Khánh Hội",
+      "overture_id": "cf219626-f56d-46dc-abb5-46cb29c164ba",
+      "url": "https://www.google.com/maps/place/Sugar+Town+Bakery+-+Kh%C3%A1nh+H%E1%BB%99i/@10.7579543,106.6999211,17z/data=!3m1!4b1!4m6!3m5!1s0x31752f3334901efd:0x5d0e37f25bc7d867!8m2!3d10.7579543!4d106.6999211!16s%2Fg%2F11ltt3r1tr?entry=ttu&g_ep=EgoyMDI2MDkyOC4wIKXMDSoASAFQAw%3D%3D",
+      "google_place_id": "0x31752f3334901efd:0x5d0e37f25bc7d867",
+      "max_reviews": 20,
+      "historical_extracted_count": 60,
+      "historical_status": "PARTIAL_LIMIT",
+      "historical_date": "2026-10-01",
+      "historical_count_source": "owner supplied; not current total",
+      "current_displayed_review_count": null,
+      "current_count_status": "UNKNOWN",
+      "reference_hashes": {},
+      "identity_evidence": {
+        "path": "D:\\Projects\\integration-recomentdation\\output\\crawler_benchmark\\runs\\20261001T075700.323641Z-4f458d89\\events.jsonl",
+        "line": 21,
+        "sha256": "df80219fd9fdf6ff4552d334a0e1c0e96f1dc1bbc99463ba08d1d5d9069ecd80",
+        "event_status": "RESOLVED",
+        "coordinate_distance_m": 0.3809247973688168
+      }
+    }
+  ]
+}
