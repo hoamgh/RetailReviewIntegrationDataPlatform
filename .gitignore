@@ -5,6 +5,8 @@ AGENTS.md
 /docs/agent_state/
 .env
 .env.*
+.auth/
+.playwright-mcp/
 .venv/
 venv/
 __pycache__/
