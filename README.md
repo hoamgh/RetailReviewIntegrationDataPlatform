@@ -1,70 +1,101 @@
 # F&B Data Platform
 
-Overture + OpenStreetMap → Bronze Parquet → catalog → Entity Resolution → Silver/Gold → Recommendation.
+**A reproducible, quality-aware data pipeline for discovering and integrating food & beverage places in Ho Chi Minh City, Vietnam.**
 
-## Working now
+This project studies how to build a trustworthy local F&B place catalog from heterogeneous sources, measure source quality, resolve duplicate business listings at the **branch/location** level, and prepare reliable datasets for future recommendations.
 
-- Existing Overture release/bbox reader, reused from the archived source CLI.
-- Raw Parquet snapshots on explicit download, fresh directory only; read-back and SHA256 metadata.
-- Existing taxonomy filtering, WGS84 point-in-polygon selection, stable source place keys and typed catalog persistence.
-- Existing OpenStreetMap-derived Khánh Hội boundary and its attribution/provenance.
-- Catalog manifest checksum/schema/identity validation and focused tests.
+**Status:** research and engineering in progress. The F&B platform replaces the earlier crawler-only foundation through reviewed source and experimental workstreams.
 
-The OSM boundary is cached data, not a new OSM POI downloader. Cross-source entity resolution, Silver/Gold analysis and recommendations remain future work. No browser, Google/TikTok crawler, Qwen or Harness is imported. The catalog schema keeps optional historical Google metadata for compatibility; it does not perform Google collection.
+## Problem
 
-## Layout
+A place may appear under different names, addresses, coordinates, and categories across providers. A high raw POI count does not prove that the records are active, unique, complete, or licensed for downstream use. The platform therefore evaluates sources **before** combining them, keeps uncertain identity decisions reviewable, and records evidence for every published snapshot.
 
-- `src/fnb_platform/prepare_catalog.py`: offline/cache or explicit Overture download CLI.
-- `src/fnb_platform/catalog.py`, `models.py`, `categories.py`: reused source-independent catalog code.
-- `config/admin_areas/`: existing boundary and OSM metadata.
-- `data/bronze/overture/`: local ignored raw snapshot and source metadata.
-- `data/place_catalog/khanh_hoi/`: local ignored canonical Parquet and manifest.
-- `pipelines/`: reserved later stages; no new execution framework.
-- `REUSE_MANIFEST.json`: verified archive mappings/hashes and explicit provenance gaps.
+## Data sources and roles
 
-## Baseline environment and offline checks
+| Source | Role | Current interpretation |
+| --- | --- | --- |
+| **Overture Maps Places** | Preferred starting catalog | Release-aware snapshots, category profiling, geographic filtering and stable source IDs; not assumed to be ground truth. |
+| **Foody** | Candidate supplementary POIs and enrichment | Experimental discovery/details and offline profiling; incomplete coverage and reuse rights must be verified before production use. |
+| **Google Maps** | Optional identity validation and review enrichment | Existing experimental crawler and matching probes; search results and shared Google identifiers alone are insufficient to confirm matches. |
+| **OpenStreetMap** | Geographic boundary/provenance; historical POI experiment | Khánh Hội boundary support; OSM POI coverage was relatively low in the pilot, so it is not the primary catalog source. |
 
-CPython 3.12.7 on Windows is the measured baseline. Core/test versions and their
-runtime dependency closure are pinned in `requirements/offline-baseline.txt`;
-project metadata pins the same direct dependencies. Artifact hashes and a fresh
-environment installation have not been verified. No packages were installed by M0.2B.
-The optional download extra is outside the offline dependency closure.
+Source-specific attribution, retention and permitted-use requirements apply. **No source is treated as a complete or verified list of operating restaurants.**
 
-Once these dependencies are available in your chosen Python environment:
+## Architecture
+
+```text
+Overture release snapshot        Foody experimental snapshot
+          |                                |
+          v                                v
+    Raw / Bronze Parquet          Raw observations + provenance
+          |                                |
+          +------------+-------------------+
+                       v
+          Profiling & quality validation
+                       |
+                       v
+          Geographic scope / normalization
+                       |
+                       v
+            Candidate generation (ER)
+                       |
+                       v
+          Match / Non-match / Human review
+                       |
+                       v
+              Silver place catalog
+                       |
+                       v
+       Gold analytics / recommendation (planned)
+```
+
+**Python + Parquet + DuckDB** are the primary local tools. Published datasets are designed around versioned snapshots, source provenance, quality checks, and atomic publication. No distributed infrastructure is needed for the current pilot.
+
+## Measured pilot evidence
+
+The current evaluation focuses on **Phường Khánh Hội** within the historical District 4 study area. A local offline comparison of the Overture October 2026 snapshot and an **incomplete, discovery-biased** Foody sample observed:
+
+| Measure | Observed |
+| --- | ---: |
+| Overture F&B records inside the same pilot polygon | 725 |
+| Foody records inside the same pilot polygon | 557 |
+| Direct matching candidate pairs generated | 2,854 |
+| Manual review rows prepared (not independently labeled) | 169 |
+
+These are **sample measurements**, not confirmed unique restaurants or verified cross-source matches. The earlier Overture baseline of 682 refers to a different snapshot/filter and should not be compared as if equivalent. Foody's incremental verified active POIs, overlap precision, and commercial reuse status remain **unverified**. The source-selection decision is currently **INCONCLUSIVE**.
+
+Experimental measurements and artifacts reside in the local, work-in-progress [source-evaluation area](experiments/source_evaluation); not all local results are published to GitHub.
+
+## Repository guide
+
+The current F&B development branch contains:
+
+- `src/fnb_platform/` — source adapters, typed catalog, geography, and offline preparation.
+- `config/admin_areas/` — pilot boundary and geographic provenance.
+- `scripts/run_offline_tests.py` — focused offline test runner.
+- `docs/` — source contracts, pipeline decisions, and delivery checkpoints.
+- `experiments/` — isolated source profiling, matching and crawler feasibility experiments where committed.
+
+Large raw data, browser profiles, credentials, checkpoints, and generated output stay outside Git.
+
+## Run the offline checks
+
+From the repository root, in a Python environment with the dependencies declared in `pyproject.toml`:
 
 ```powershell
 python -B scripts/run_offline_tests.py
-$env:PYTHONPATH = "$PWD\src"
-python -B -m fnb_platform.prepare_catalog
 ```
 
-The first command runs fixtures with socket access blocked and external pytest
-plugins disabled. It retains temporary evidence under ignored `output/baseline-tests-*`.
-The second command reads cached input and **writes the catalog**; it is not a test.
-Source data is not supplied by Git. M0.1 verified 378,036 Bronze rows and 682 unique
-catalog keys from release 2026-09-23.1, retrieved in September 2026. This is not a
-complete count of actual businesses. The current full backup was skipped by owner
-instruction; Git does not protect ignored data, profiles or checkpoints.
+A separate offline catalog-preparation command reads cached inputs and **writes** output, so it should only be run when the required local data is present. Live crawlers, network acquisition and browser sessions are never prerequisites for the offline tests.
 
-## Optional explicit network download
+## Roadmap
 
-Use the existing official overturemaps client with a release you deliberately select, and a fresh Bronze directory:
+1. Finalize reproducible source inventory, data profiling, release-to-release change detection and usage-rights assessment.
+2. Independently validate a stratified sample of Foody–Overture entity matches, branch identity, and operating status.
+3. Promote validated records through Silver/Gold datasets and evaluate incremental value for discovery and recommendations.
 
-```powershell
-python -B -m fnb_platform.prepare_catalog --download --release <release> --bronze-dir data/bronze/overture/<new-snapshot> --output data/place_catalog/<new-snapshot>/canonical_places.parquet
-```
+## Scope and limitations
 
-`--ward` selects a different valid boundary. The CLI queries its bounding box, stores raw data, then applies the polygon for the catalog. Existing snapshot directories are refused; failed/incomplete snapshots are retained and are not treated as completed. SQLite and Parquet are not claimed to form a single transaction. No real download was executed in the restoration task; the download path was tested using controlled batches.
+This is a **data engineering project under development**, not a deployed recommendation service. Current crawler experiments, tentative Google identity links and unlabeled ER candidates are not production-quality truth. The project tracks data quality, input fingerprints and source changes so future scheduled jobs can detect changes safely rather than assume every restaurant updates on each release.
 
-## Tests
-
-Run `python -B scripts/run_offline_tests.py`. See `docs/_delivery/STATUS.md` for the
-executed command, measured result and remaining environment limitations.
-
-## Legacy recovery
-
-Archive branch `archive/legacy-crawlers-20261028`, commit `2f0f8ecc2ff5d427d7d7efaa7be46a848d2d16c5`. Google/TikTok/Harness/Qwen remain recoverable there and in their original worktrees. Do not reset dirty historical worktrees or delete the shared Git common directory. No remote publication was performed.
-
-## Attribution
-
-LICENSE is unchanged. Preserve Overture source-specific attribution and OpenStreetMap contributors/ODbL metadata when using the data. No datasets are tracked by Git.
+See [delivery status](docs/_delivery/STATUS.md) and the [source evaluation experiments](experiments/source_evaluation) for implementation evidence. Earlier crawler work remains available in archive history. Dataset licensing and third-party terms must be reviewed before redistribution or commercial use.
