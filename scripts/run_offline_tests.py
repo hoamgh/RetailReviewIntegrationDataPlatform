@@ -25,9 +25,14 @@ def main():
     # A unique ignored directory avoids touching previous pytest evidence.
     (root / "output").mkdir(exist_ok=True)
     evidence = tempfile.mkdtemp(prefix="baseline-tests-", dir=root / "output")
-    return pytest.main([
-        "tests/test_catalog.py", "tests/test_categories.py", "tests/test_prepare_catalog.py",
-        "tests/test_osm.py",
+    test_paths = ["tests/test_catalog.py", "tests/test_categories.py",
+                  "tests/test_prepare_catalog.py", "tests/test_osm.py"]
+    for optional in ("experiments/source_evaluation", "experiments/foody",
+                     "experiments/google_resolution",
+                     "experiments/browser_framework/test_benchmark.py"):
+        if (root / optional).exists():
+            test_paths.append(optional)
+    return pytest.main(test_paths + [
         "-q", "-p", "no:cacheprovider", "--basetemp", evidence,
     ])
 
