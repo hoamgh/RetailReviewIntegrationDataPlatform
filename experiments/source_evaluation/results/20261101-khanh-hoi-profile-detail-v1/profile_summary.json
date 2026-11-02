@@ -1,0 +1,432 @@
+{
+  "inputs_sha256": {
+    "output\\foody-q4-detail-first1000-v1\\state.json": "15e7dfa2eb6338728cac5cedfca6b22f940efb2e4857ec6c4feb84312e70b5dd",
+    "output\\district4-profile\\runs\\15d25e5b4b9e6f1c66e9\\overture_fnb_district4.parquet": "64c74bf3901e6b8e72c7d42c8f6fb6754627b1fd3cf9eb7f9cdeeabb73f7beda",
+    "config\\admin_areas\\phuong_khanh_hoi.geojson": "29a17ec4fd1f3fc578fa7decee15c9b5f12591e2cc678d5f97d34f1092d9ca55"
+  },
+  "input_bytes": {
+    "foody_state_json": 2363143,
+    "overture_fnb_parquet": 205591
+  },
+  "foody_coverage": "FIRST_DISCOVERED_URLS_SAMPLE_NOT_DISTRICT_COMPLETE",
+  "scope": "Khánh Hội polygon; same clip rule; source-specific F&B filters not fully harmonized",
+  "source_counts": {
+    "foody": {
+      "input": 1000,
+      "unique": 1000,
+      "duplicate_ids": 0,
+      "missing_ids": 0,
+      "ward": 557,
+      "excluded": {
+        "outside_polygon": 443
+      }
+    },
+    "overture": {
+      "input": 1531,
+      "unique": 1531,
+      "duplicate_ids": 0,
+      "missing_ids": 0,
+      "ward": 725,
+      "excluded": {
+        "outside_polygon": 806
+      }
+    }
+  },
+  "source_schemas": {
+    "foody_record_fields": [
+      "categories",
+      "fields",
+      "geographic_scope",
+      "geometry_status",
+      "latitude",
+      "longitude",
+      "name",
+      "observed_urls",
+      "provenance",
+      "review_count_displayed",
+      "review_dom_blocks",
+      "review_samples",
+      "reviews_collected",
+      "source",
+      "source_id",
+      "source_id_candidates",
+      "url"
+    ],
+    "foody_nested_field_presence": {
+      "addressLocality": 1000,
+      "addressRegion": 1000,
+      "latitude": 1000,
+      "longitude": 1000,
+      "openingHours": 1000,
+      "priceRange": 1000,
+      "servesCuisine": 1000,
+      "streetAddress": 1000
+    },
+    "foody_nested_category_presence": {
+      "Phong cách ẩm thực": 847,
+      "Phục vụ các món": 918,
+      "Thể loại": 1000
+    },
+    "overture_arrow_schema": "id: string\ngeometry: binary\nconfidence: double\nwebsites: list<element: string>\n  child 0, element: string\nemails: list<element: string>\n  child 0, element: string\nsocials: list<element: string>\n  child 0, element: string\nphones: list<element: string>\n  child 0, element: string\nbrand: struct<wikidata: string, names: struct<primary: string, common: map<string, string ('common')>, rule (... 192 chars omitted)\n  child 0, wikidata: string\n  child 1, names: struct<primary: string, common: map<string, string ('common')>, rules: list<element: struct<variant: (... 159 chars omitted)\n      child 0, primary: string\n      child 1, common: map<string, string ('common')>\n          child 0, common: struct<key: string not null, value: string> not null\n              child 0, key: string not null\n              child 1, value: string\n      child 2, rules: list<element: struct<variant: string, language: string, perspectives: struct<mode: string, countries (... 87 chars omitted)\n          child 0, element: struct<variant: string, language: string, perspectives: struct<mode: string, countries: list<element (... 72 chars omitted)\n              child 0, variant: string\n              child 1, language: string\n              child 2, perspectives: struct<mode: string, countries: list<element: string>>\n                  child 0, mode: string\n                  child 1, countries: list<element: string>\n                      child 0, element: string\n              child 3, value: string\n              child 4, between: list<element: double>\n                  child 0, element: double\n              child 5, side: string\naddresses: list<element: struct<freeform: string, locality: string, postcode: string, region: string, country:  (... 8 chars omitted)\n  child 0, element: struct<freeform: string, locality: string, postcode: string, region: string, country: string>\n      child 0, freeform: string\n      child 1, locality: string\n      child 2, postcode: string\n      child 3, region: string\n      child 4, country: string\nnames: struct<primary: string, common: map<string, string ('common')>, rules: list<element: struct<variant: (... 159 chars omitted)\n  child 0, primary: string\n  child 1, common: map<string, string ('common')>\n      child 0, common: struct<key: string not null, value: string> not null\n          child 0, key: string not null\n          child 1, value: string\n  child 2, rules: list<element: struct<variant: string, language: string, perspectives: struct<mode: string, countries (... 87 chars omitted)\n      child 0, element: struct<variant: string, language: string, perspectives: struct<mode: string, countries: list<element (... 72 chars omitted)\n          child 0, variant: string\n          child 1, language: string\n          child 2, perspectives: struct<mode: string, countries: list<element: string>>\n              child 0, mode: string\n              child 1, countries: list<element: string>\n                  child 0, element: string\n          child 3, value: string\n          child 4, between: list<element: double>\n              child 0, element: double\n          child 5, side: string\nsources: list<element: struct<property: string, dataset: string, license: string, record_id: string, update_t (... 118 chars omitted)\n  child 0, element: struct<property: string, dataset: string, license: string, record_id: string, update_time: string, c (... 103 chars omitted)\n      child 0, property: string\n      child 1, dataset: string\n      child 2, license: string\n      child 3, record_id: string\n      child 4, update_time: string\n      child 5, confidence: double\n      child 6, between: list<element: double>\n          child 0, element: double\n      child 7, provider: string\n      child 8, resource: string\n      child 9, version: string\noperating_status: string\nbasic_category: string\ntaxonomy: struct<primary: string, hierarchy: list<element: string>, alternates: list<element: string>>\n  child 0, primary: string\n  child 1, hierarchy: list<element: string>\n      child 0, element: string\n  child 2, alternates: list<element: string>\n      child 0, element: string\nversion: int32\nbbox: struct<xmin: double, xmax: double, ymin: double, ymax: double>\n  child 0, xmin: double\n  child 1, xmax: double\n  child 2, ymin: double\n  child 3, ymax: double\n-- schema metadata --\ngeo: '{\"version\": \"1.1.0\", \"primary_column\": \"geometry\", \"columns\": {\"geo' + 58\nschema_versions: '{\"overture-schema-system\": \"2.0.0.post1+main.e6b120a\", ' + 35"
+  },
+  "overture_source_lifecycle_khanh_hoi": {
+    "providers": {
+      "Overture": 725,
+      "meta": 724,
+      "AllThePlaces": 1
+    },
+    "source_links": 1450,
+    "multi_source_pois": 725,
+    "missing_source_update_time": 0,
+    "future_timestamp_pois": 0,
+    "age_buckets": {
+      "0-30d": 725
+    },
+    "upstream_age_buckets": {
+      "0-30d": 637,
+      "31-90d": 88
+    }
+  },
+  "profiles": {
+    "foody": {
+      "district4_input": {
+        "rows": 1000,
+        "present": {
+          "name": 1000,
+          "address": 1000,
+          "category": 1000,
+          "price": 892,
+          "cuisine": 837,
+          "reviews": 749,
+          "phone": 0,
+          "updated": 1000,
+          "status": 0
+        },
+        "coordinates_present": 1000,
+        "category_distribution": {
+          "Café/Dessert, Món Việt, Trà": 57,
+          "Quán ăn, Món Việt, Bún": 47,
+          "Quán ăn, Món Việt, Thịt Gà": 46,
+          "Ăn vặt/vỉa hè, Món Việt, Ăn vặt - Ăn nhẹ": 42,
+          "Café/Dessert, Món Việt, Café - Kem": 35,
+          "Ăn vặt/vỉa hè, Món Việt, Bánh mì": 23,
+          "Quán ăn, Món Việt, Phở": 20,
+          "Quán ăn, Bún": 19,
+          "Shop/Cửa hàng": 19,
+          "Quán ăn, Món Việt, Thịt Bò": 17,
+          "Shop Online, Món Việt": 17,
+          "Quán ăn, Món Việt, Hải sản": 16,
+          "Quán ăn, Món Việt, Món nước": 16,
+          "Ăn vặt/vỉa hè, Món Việt, Bánh tráng": 15,
+          "Quán ăn, Món Việt, Bánh mì": 15,
+          "Ăn vặt/vỉa hè, Món Việt, Trà": 15,
+          "Quán ăn, Món Việt, Cơm Tấm": 15,
+          "Quán ăn, Ăn vặt - Ăn nhẹ": 15,
+          "Ăn vặt/vỉa hè, Món Việt, Hải sản": 13,
+          "Café/Dessert, Trà chanh": 13,
+          "Quán ăn, Món Việt, Cơm": 12,
+          "Ăn vặt/vỉa hè, Món Việt, Bún": 11,
+          "Ăn vặt/vỉa hè, Món Việt, Thịt Gà": 11,
+          "Quán ăn, Bánh mì": 10,
+          "Shop Online, Món Việt, Ăn vặt - Ăn nhẹ": 9
+        },
+        "operating_status": {
+          "UNKNOWN": 1000
+        },
+        "coordinate_collision": {
+          "groups": 12,
+          "rows_in_groups": 25,
+          "surplus_rows": 13
+        },
+        "exact_normalized_name_address": {
+          "groups": 0,
+          "rows_in_groups": 0,
+          "surplus_rows": 0
+        },
+        "names_duplicated": {
+          "groups": 0,
+          "rows_in_groups": 0,
+          "surplus_rows": 0
+        },
+        "names_blank_or_placeholder": 0,
+        "addresses_blank_or_placeholder": 0,
+        "timestamp_min": "2026-10-29T07:13:59.399171+00:00",
+        "timestamp_max": "2026-10-31T17:20:23.265084+00:00",
+        "lat_quantiles": {
+          "n": 1000,
+          "min": 10.752883,
+          "median": 10.759869,
+          "p90": 10.7638486,
+          "max": 10.7714767
+        },
+        "lon_quantiles": {
+          "n": 1000,
+          "min": 106.68995,
+          "median": 106.705006,
+          "p90": 106.7121849,
+          "max": 106.721266
+        },
+        "distinct_categories": 278,
+        "review_count_quantiles": {
+          "n": 749,
+          "min": 1.0,
+          "median": 6.0,
+          "p90": 41.0,
+          "max": 567.0
+        },
+        "price_examples_count": 373
+      },
+      "khanh_hoi": {
+        "rows": 557,
+        "present": {
+          "name": 557,
+          "address": 557,
+          "category": 557,
+          "price": 504,
+          "cuisine": 466,
+          "reviews": 416,
+          "phone": 0,
+          "updated": 557,
+          "status": 0
+        },
+        "coordinates_present": 557,
+        "category_distribution": {
+          "Quán ăn, Món Việt, Thịt Gà": 32,
+          "Café/Dessert, Món Việt, Trà": 27,
+          "Quán ăn, Món Việt, Bún": 25,
+          "Ăn vặt/vỉa hè, Món Việt, Ăn vặt - Ăn nhẹ": 25,
+          "Ăn vặt/vỉa hè, Món Việt, Bánh mì": 15,
+          "Quán ăn, Món Việt, Hải sản": 14,
+          "Café/Dessert, Món Việt, Café - Kem": 14,
+          "Quán ăn, Bún": 13,
+          "Quán ăn, Món Việt, Thịt Bò": 12,
+          "Ăn vặt/vỉa hè, Món Việt, Thịt Gà": 10,
+          "Quán ăn, Món Việt, Món nước": 10,
+          "Quán ăn, Món Việt, Bánh mì": 9,
+          "Shop Online, Món Việt": 9,
+          "Quán ăn, Món Việt, Phở": 9,
+          "Ăn vặt/vỉa hè, Món Việt, Hải sản": 9,
+          "Shop/Cửa hàng": 9,
+          "Ăn vặt/vỉa hè, Món Việt, Trà": 7,
+          "Café/Dessert, Trà chanh": 7,
+          "Quán ăn, Ăn vặt - Ăn nhẹ": 7,
+          "Quán ăn, Món Việt, Bánh - Kẹo": 6,
+          "Quán ăn, Bánh mì": 6,
+          "Quán ăn, Món Miền Trung, Bún": 6,
+          "Ăn vặt/vỉa hè, Món Việt, Bún": 6,
+          "Quán ăn, Món Việt, Cơm Tấm": 6,
+          "Quán ăn, Món Việt, Cơm": 6
+        },
+        "operating_status": {
+          "UNKNOWN": 557
+        },
+        "coordinate_collision": {
+          "groups": 6,
+          "rows_in_groups": 13,
+          "surplus_rows": 7
+        },
+        "exact_normalized_name_address": {
+          "groups": 0,
+          "rows_in_groups": 0,
+          "surplus_rows": 0
+        },
+        "names_duplicated": {
+          "groups": 0,
+          "rows_in_groups": 0,
+          "surplus_rows": 0
+        },
+        "names_blank_or_placeholder": 0,
+        "addresses_blank_or_placeholder": 0,
+        "timestamp_min": "2026-10-29T07:13:59.399171+00:00",
+        "timestamp_max": "2026-10-31T17:20:16.570306+00:00",
+        "lat_quantiles": {
+          "n": 557,
+          "min": 10.7533019,
+          "median": 10.7605762,
+          "p90": 10.76272,
+          "max": 10.764782
+        },
+        "lon_quantiles": {
+          "n": 557,
+          "min": 106.6975687,
+          "median": 106.7040628,
+          "p90": 106.7085984,
+          "max": 106.7107589542866
+        },
+        "distinct_categories": 192,
+        "review_count_quantiles": {
+          "n": 416,
+          "min": 1.0,
+          "median": 5.5,
+          "p90": 41.0,
+          "max": 567.0
+        },
+        "price_examples_count": 239
+      }
+    },
+    "overture": {
+      "district4_input": {
+        "rows": 1531,
+        "present": {
+          "name": 1531,
+          "address": 1456,
+          "category": 1531,
+          "price": 0,
+          "cuisine": 0,
+          "reviews": 0,
+          "phone": 1306,
+          "updated": 1531,
+          "status": 0
+        },
+        "coordinates_present": 1531,
+        "category_distribution": {
+          "restaurant": 369,
+          "coffee_shop": 289,
+          "diner": 144,
+          "cafe": 103,
+          "bakery": 94,
+          "vietnamese_restaurant": 77,
+          "bubble_tea_shop": 52,
+          "food_and_drink": 42,
+          "fast_food_restaurant": 41,
+          "seafood_restaurant": 37,
+          "food_truck_stand": 22,
+          "chinese_restaurant": 21,
+          "vegetarian_restaurant": 20,
+          "asian_restaurant": 17,
+          "tea_room": 15,
+          "ramen_restaurant": 15,
+          "bar": 14,
+          "smoothie_juice_bar": 13,
+          "ice_cream_shop": 11,
+          "barbecue_restaurant": 11,
+          "japanese_restaurant": 8,
+          "breakfast_and_brunch_restaurant": 8,
+          "thai_restaurant": 8,
+          "sushi_restaurant": 7,
+          "chicken_restaurant": 7
+        },
+        "operating_status": {
+          "UNKNOWN": 1531
+        },
+        "coordinate_collision": {
+          "groups": 17,
+          "rows_in_groups": 43,
+          "surplus_rows": 26
+        },
+        "exact_normalized_name_address": {
+          "groups": 3,
+          "rows_in_groups": 6,
+          "surplus_rows": 3
+        },
+        "names_duplicated": {
+          "groups": 28,
+          "rows_in_groups": 60,
+          "surplus_rows": 32
+        },
+        "names_blank_or_placeholder": 2,
+        "addresses_blank_or_placeholder": 75,
+        "timestamp_min": "2026-10-15T18:00:21Z",
+        "timestamp_max": "2026-10-15T18:00:21Z",
+        "lat_quantiles": {
+          "n": 1531,
+          "min": 10.75251,
+          "median": 10.7595998,
+          "p90": 10.76473,
+          "max": 10.768409609856
+        },
+        "lon_quantiles": {
+          "n": 1531,
+          "min": 106.68855,
+          "median": 106.70373,
+          "p90": 106.7098,
+          "max": 106.72000442
+        },
+        "distinct_categories": 61,
+        "review_count_quantiles": null,
+        "price_examples_count": 0
+      },
+      "khanh_hoi": {
+        "rows": 725,
+        "present": {
+          "name": 725,
+          "address": 693,
+          "category": 725,
+          "price": 0,
+          "cuisine": 0,
+          "reviews": 0,
+          "phone": 611,
+          "updated": 725,
+          "status": 0
+        },
+        "coordinates_present": 725,
+        "category_distribution": {
+          "restaurant": 181,
+          "coffee_shop": 109,
+          "diner": 82,
+          "bakery": 49,
+          "vietnamese_restaurant": 41,
+          "cafe": 38,
+          "bubble_tea_shop": 28,
+          "food_and_drink": 20,
+          "fast_food_restaurant": 19,
+          "seafood_restaurant": 17,
+          "vegetarian_restaurant": 12,
+          "asian_restaurant": 12,
+          "chinese_restaurant": 12,
+          "food_truck_stand": 7,
+          "ramen_restaurant": 7,
+          "japanese_restaurant": 6,
+          "chicken_restaurant": 6,
+          "thai_restaurant": 6,
+          "barbecue_restaurant": 6,
+          "bar": 6,
+          "tea_room": 6,
+          "smoothie_juice_bar": 5,
+          "ice_cream_shop": 5,
+          "theme_restaurant": 4,
+          "sushi_restaurant": 4
+        },
+        "operating_status": {
+          "UNKNOWN": 725
+        },
+        "coordinate_collision": {
+          "groups": 4,
+          "rows_in_groups": 8,
+          "surplus_rows": 4
+        },
+        "exact_normalized_name_address": {
+          "groups": 0,
+          "rows_in_groups": 0,
+          "surplus_rows": 0
+        },
+        "names_duplicated": {
+          "groups": 7,
+          "rows_in_groups": 14,
+          "surplus_rows": 7
+        },
+        "names_blank_or_placeholder": 1,
+        "addresses_blank_or_placeholder": 32,
+        "timestamp_min": "2026-10-15T18:00:21Z",
+        "timestamp_max": "2026-10-15T18:00:21Z",
+        "lat_quantiles": {
+          "n": 725,
+          "min": 10.752934041288526,
+          "median": 10.76021,
+          "p90": 10.7627253,
+          "max": 10.7648497
+        },
+        "lon_quantiles": {
+          "n": 725,
+          "min": 106.6973994,
+          "median": 106.70266457,
+          "p90": 106.70692658,
+          "max": 106.71091235
+        },
+        "distinct_categories": 47,
+        "review_count_quantiles": null,
+        "price_examples_count": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "run_at": "2026-11-01T04:21:13.422702+00:00",
+  "elapsed_seconds": 21.42,
+  "inputs": {
+    "foody_state": "15e7dfa2eb6338728cac5cedfca6b22f940efb2e4857ec6c4feb84312e70b5dd",
+    "overture_parquet": "64c74bf3901e6b8e72c7d42c8f6fb6754627b1fd3cf9eb7f9cdeeabb73f7beda",
+    "ward_polygon": "29a17ec4fd1f3fc578fa7decee15c9b5f12591e2cc678d5f97d34f1092d9ca55"
+  },
+  "scope": "Phuong Khanh Hoi polygon, EPSG:4326, polygon.covers(point)",
+  "foody_discovery": "FIRST_DISCOVERED_URLS_SAMPLE_NOT_DISTRICT_COMPLETE",
+  "source_counts": {
+    "foody": {
+      "raw": 1000,
+      "unique": 1000,
+      "duplicates": 0,
+      "missing_ids": 0,
+      "inside": 557,
+      "excluded": {
+        "outside_polygon": 443
+      }
+    },
+    "overture": {
+      "raw": 1531,
+      "unique": 1531,
+      "duplicates": 0,
+      "missing_ids": 0,
+      "inside": 725,
+      "excluded": {
+        "outside_polygon": 806
+      }
+    }
+  },
+  "candidates": {
+    "pairs": 2854,
+    "foody_with_candidate": 525,
+    "overture_with_candidate": 628,
+    "possible_many_to_many": 449,
+    "review_required": 639,
+    "non_match_provisional": 2215
+  },
+  "strata": {
+    "FOODY_STRONG_CANDIDATE": {
+      "population": 37,
+      "sampled": 37
+    },
+    "FOODY_AMBIGUOUS": {
+      "population": 488,
+      "sampled": 50
+    },
+    "FOODY_NO_CANDIDATE": {
+      "population": 32,
+      "sampled": 32
+    },
+    "OVERTURE_NO_CONFIDENT_MATCH": {
+      "population": 688,
+      "sampled": 50
+    }
+  },
+  "bridge": {
+    "status": "PROVISIONAL_GOOGLE_SEARCH_IDENTIFIERS",
+    "shared_ids": 116,
+    "pair_count": 221,
+    "worst_collisions": [
+      {
+        "identifier_sha256": "4cffc3d2ab47",
+        "foody": 3,
+        "overture": 16,
+        "pairs": 48
+      },
+      {
+        "identifier_sha256": "6e65a4f48959",
+        "foody": 2,
+        "overture": 5,
+        "pairs": 10
+      },
+      {
+        "identifier_sha256": "c01169412c79",
+        "foody": 2,
+        "overture": 5,
+        "pairs": 10
+      },
+      {
+        "identifier_sha256": "7193aa459697",
+        "foody": 2,
+        "overture": 4,
+        "pairs": 8
+      },
+      {
+        "identifier_sha256": "0f58aaeb7b37",
+        "foody": 2,
+        "overture": 2,
+        "pairs": 4
+      },
+      {
+        "identifier_sha256": "20917b80f53c",
+        "foody": 2,
+        "overture": 2,
+        "pairs": 4
+      },
+      {
+        "identifier_sha256": "cc4dfec21cef",
+        "foody": 1,
+        "overture": 3,
+        "pairs": 3
+      },
+      {
+        "identifier_sha256": "1a7139b12cdd",
+        "foody": 1,
+        "overture": 3,
+        "pairs": 3
+      }
+    ],
+    "root_cause": "many-to-many reuse of captured search identity; precise crawler selection cause unverified"
+  },
+  "config": {
+    "candidate_radius_m": 25,
+    "name_extension_radius_m": 250,
+    "name_extension_similarity": 0.7,
+    "address_extension_radius_m": 100,
+    "address_extension_similarity": 0.75,
+    "review_score": 0.5,
+    "strong_sample_score": 0.8,
+    "seed": 20261101
+  },
+  "output_sha256": {
+    "01_source_inventory.md": "ac98df37c50ea6e6f6d3c5f713ff6a635a31ea0f2efcbda1ddf64d1f3fc26e5c",
+    "02_quality_profile.md": "f013e1df20089fed40fccd00633e1c97b7312b41ed45c1dcbbaf9b4a7bc6019d",
+    "03_complementarity_report.md": "695af15afc61511285ed2ef255c1a48613784e15078872f128b0cf1e206e4498",
+    "04_source_selection_decision.md": "fae34c5a499866711d0370424e5f54d135d54ec6059deeee1cff3d1a9d74a77b",
+    "candidate_pairs.parquet": "b6ba4410d8886f36a890497e44b0f2d74fea040886fc64353fe844db58707322",
+    "manual_review.csv": "dc14b5c91d0ac284dce074a1012236552a906302885d9472f51d1f68b067d0cf",
+    "matching_audit.md": "726ebbfa3682d6a30f9a8b8fa6e660207b8a04196ea6dd5cc74deb80f0d3ca67",
+    "quality_metrics.csv": "329298b7f630fc67419633dee5999fd43911fc0db2782547bec93191300e8112"
+  }
+}
