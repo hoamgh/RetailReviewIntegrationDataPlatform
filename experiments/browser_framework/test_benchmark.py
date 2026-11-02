@@ -88,7 +88,9 @@ class BenchmarkTests(unittest.TestCase):
             package = SimpleNamespace(__file__=str(root / "seleniumbase/__init__.py"))
             with patch.dict(sys.modules, {"seleniumbase": package}), patch(
                     "experiments.browser_framework.run.subprocess.check_output",
-                    side_effect=["156.0.8078.73", "ChromeDriver 156.0.8078.73"]):
+                    side_effect=["156.0.8078.73", "ChromeDriver 156.0.8078.73"]), patch(
+                    "experiments.browser_framework.run.importlib.metadata.version",
+                    return_value="test-fixture"):
                 result = environment(str(chrome), str(driver))
             self.assertIsNone(result["production_driver_sha256"])
             self.assertEqual(result["driver_path"], str(driver.resolve()))
